@@ -6,7 +6,7 @@ export function useSticks(initialSticks: PortfolioStick[]) {
   const [sticks, setSticks] = useState<PortfolioStick[]>(initialSticks)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 }) // Start off-screen
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(Date.now())
 
   // Initialize dimensions

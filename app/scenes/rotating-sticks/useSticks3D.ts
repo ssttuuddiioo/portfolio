@@ -89,7 +89,7 @@ export function useSticks3D(initialSticks: PortfolioStick[]) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0, depth: 500 })
   const [formation, setFormation] = useState<FormationType>('scattered')
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, z: 0 })
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(Date.now())
   const targetPositionsRef = useRef<Map<string, { x: number; y: number; z: number }>>(new Map())
   const hypercubeTimeRef = useRef<number>(0)
