@@ -1,0 +1,88 @@
+export default {
+  name: 'stick',
+  title: 'Portfolio Stick',
+  type: 'document',
+  fields: [
+    {
+      name: 'skill',
+      title: 'Skill/Label',
+      type: 'string',
+      description: 'Text to display on stick (keep short: CODE, DESIGN, BUILD)',
+      validation: (Rule: any) => Rule.required().max(20),
+    },
+    {
+      name: 'client',
+      title: 'Client Name',
+      type: 'string',
+      description: 'Client name shown ABOVE stick on hover (e.g., DOLBY)',
+      validation: (Rule: any) => Rule.required().max(30),
+    },
+    {
+      name: 'title',
+      title: 'Project Title',
+      type: 'string',
+      description: 'Project title shown BELOW stick on hover (e.g., MOMENT)',
+      validation: (Rule: any) => Rule.required().max(50),
+    },
+    {
+      name: 'description',
+      title: 'Project Description',
+      type: 'text',
+      description: 'Project description shown on click',
+      validation: (Rule: any) => Rule.max(200),
+    },
+    {
+      name: 'imageUrl',
+      title: 'Project Image URL',
+      type: 'string',
+      description: 'URL or path to project image (e.g., /project-image.jpg)',
+    },
+    {
+      name: 'rotationSpeed',
+      title: 'Rotation Speed',
+      type: 'number',
+      description: 'Between -0.02 and 0.02. Negative = counterclockwise',
+      validation: (Rule: any) => Rule.required().min(-0.02).max(0.02),
+      initialValue: 0.01,
+    },
+    {
+      name: 'length',
+      title: 'Length (px)',
+      type: 'number',
+      description: 'Stick length in pixels (120-200)',
+      validation: (Rule: any) => Rule.required().min(120).max(200),
+      initialValue: 150,
+    },
+    {
+      name: 'velocityX',
+      title: 'Initial Velocity X',
+      type: 'number',
+      description: 'Initial horizontal velocity (-200 to 200)',
+      validation: (Rule: any) => Rule.required().min(-200).max(200),
+      initialValue: 100,
+    },
+    {
+      name: 'velocityY',
+      title: 'Initial Velocity Y',
+      type: 'number',
+      description: 'Initial vertical velocity (-200 to 200)',
+      validation: (Rule: any) => Rule.required().min(-200).max(200),
+      initialValue: -100,
+    },
+    {
+      name: 'order',
+      title: 'Display Order',
+      type: 'number',
+      description: 'Order in which sticks are rendered',
+      initialValue: 0,
+    },
+  ],
+  orderings: [
+    {
+      title: 'Order',
+      name: 'orderAsc',
+      by: [{ field: 'order', direction: 'asc' }],
+    },
+  ],
+}
+
