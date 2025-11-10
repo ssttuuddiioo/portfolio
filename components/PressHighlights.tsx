@@ -3,36 +3,50 @@ import { PressHighlight } from '@/types/pressHighlight'
 import { SiteSettings } from '@/types/siteSettings'
 
 async function getPressHighlights(): Promise<PressHighlight[]> {
-  const query = `*[_type == "pressHighlight"] | order(date desc) {
-    _id,
-    _type,
-    title,
-    date,
-    publication,
-    url,
-    featured
-  }`
-  
-  return await client.fetch(query)
+  try {
+    const query = `*[_type == "pressHighlight"] | order(date desc) {
+      _id,
+      _type,
+      title,
+      date,
+      publication,
+      url,
+      featured
+    }`
+    
+    return await client.fetch(query)
+  } catch (error) {
+    console.error('Error fetching press highlights:', error)
+    return []
+  }
 }
 
 async function getSiteSettings(): Promise<SiteSettings> {
-  const query = `*[_type == "siteSettings"][0] {
-    _id,
-    _type,
-    pressHighlightsTitle,
-    heroTitle,
-    contactEmail,
-    socialLinks
-  }`
-  
-  const settings = await client.fetch(query)
-  
-  // Return default if no settings exist yet
-  return settings || {
-    _id: 'default',
-    _type: 'siteSettings',
-    pressHighlightsTitle: 'Press Highlights',
+  try {
+    const query = `*[_type == "siteSettings"][0] {
+      _id,
+      _type,
+      pressHighlightsTitle,
+      heroTitle,
+      contactEmail,
+      socialLinks
+    }`
+    
+    const settings = await client.fetch(query)
+    
+    // Return default if no settings exist yet
+    return settings || {
+      _id: 'default',
+      _type: 'siteSettings',
+      pressHighlightsTitle: 'Press Highlights',
+    }
+  } catch (error) {
+    console.error('Error fetching site settings:', error)
+    return {
+      _id: 'default',
+      _type: 'siteSettings',
+      pressHighlightsTitle: 'Press Highlights',
+    }
   }
 }
 
