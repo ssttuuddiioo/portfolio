@@ -1,8 +1,13 @@
-import { client } from '@/sanity/lib/client'
+import { client, isSanityConfigured } from '@/sanity/lib/client'
 import { PressHighlight } from '@/types/pressHighlight'
 import { SiteSettings } from '@/types/siteSettings'
 
 async function getPressHighlights(): Promise<PressHighlight[]> {
+  if (!isSanityConfigured()) {
+    console.warn('Sanity is not configured. Skipping press highlights fetch.')
+    return []
+  }
+
   try {
     const query = `*[_type == "pressHighlight"] | order(date desc) {
       _id,
@@ -22,6 +27,15 @@ async function getPressHighlights(): Promise<PressHighlight[]> {
 }
 
 async function getSiteSettings(): Promise<SiteSettings> {
+  if (!isSanityConfigured()) {
+    console.warn('Sanity is not configured. Using default site settings.')
+    return {
+      _id: 'default',
+      _type: 'siteSettings',
+      pressHighlightsTitle: 'Press Highlights',
+    }
+  }
+
   try {
     const query = `*[_type == "siteSettings"][0] {
       _id,
