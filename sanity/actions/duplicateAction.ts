@@ -1,5 +1,6 @@
 import { DocumentActionComponent } from 'sanity'
 import { CopyIcon } from '@sanity/icons'
+import { client } from '@/sanity/lib/client'
 
 export const duplicateAction: DocumentActionComponent = (props) => {
   const { draft, published, onComplete } = props
@@ -18,13 +19,13 @@ export const duplicateAction: DocumentActionComponent = (props) => {
         ...docWithoutSystemFields,
         _type,
         // Add suffix to title if it exists
-        ...(docWithoutSystemFields.title && {
+        ...(docWithoutSystemFields.title ? {
           title: `${docWithoutSystemFields.title} (Copy)`,
-        }),
+        } : {}),
       }
 
       // Create the new document
-      await props.getClient().create(newDoc)
+      await client.create(newDoc)
 
       onComplete()
     },

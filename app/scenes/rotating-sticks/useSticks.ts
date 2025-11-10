@@ -75,6 +75,7 @@ export function useSticks(initialSticks: PortfolioStick[]) {
           position = {
             x: position.x + velocity.x * deltaTime * speedMultiplier,
             y: position.y + velocity.y * deltaTime * speedMultiplier,
+            z: position.z || 0, // Maintain z coordinate for 2D scene
           }
 
           // Update rotation
