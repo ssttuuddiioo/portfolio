@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { gsap } from 'gsap'
 import { AnimatedLink } from './AnimatedLink'
 import { PressHighlight } from '@/types/pressHighlight'
 
@@ -16,9 +17,74 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     contact: false,
   })
 
+  const aboutContentRef = useRef<HTMLDivElement>(null)
+  const experienceContentRef = useRef<HTMLDivElement>(null)
+  const pressContentRef = useRef<HTMLDivElement>(null)
+  const contactContentRef = useRef<HTMLDivElement>(null)
+
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
+
+  useEffect(() => {
+    const contentRef = aboutContentRef.current
+    if (contentRef) {
+      if (openSections.about) {
+        gsap.fromTo(
+          contentRef,
+          { height: 0, opacity: 0 },
+          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+        )
+      } else {
+        gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
+      }
+    }
+  }, [openSections.about])
+
+  useEffect(() => {
+    const contentRef = experienceContentRef.current
+    if (contentRef) {
+      if (openSections.experience) {
+        gsap.fromTo(
+          contentRef,
+          { height: 0, opacity: 0 },
+          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+        )
+      } else {
+        gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
+      }
+    }
+  }, [openSections.experience])
+
+  useEffect(() => {
+    const contentRef = pressContentRef.current
+    if (contentRef) {
+      if (openSections.press) {
+        gsap.fromTo(
+          contentRef,
+          { height: 0, opacity: 0 },
+          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+        )
+      } else {
+        gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
+      }
+    }
+  }, [openSections.press])
+
+  useEffect(() => {
+    const contentRef = contactContentRef.current
+    if (contentRef) {
+      if (openSections.contact) {
+        gsap.fromTo(
+          contentRef,
+          { height: 0, opacity: 0 },
+          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+        )
+      } else {
+        gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
+      }
+    }
+  }, [openSections.contact])
 
   return (
     <div className="bg-[#0020FF] text-white">
@@ -78,8 +144,11 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             </span>
           </div>
 
-          {openSections.about && (
-            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px' }}>
+          <div 
+            ref={aboutContentRef}
+            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
@@ -104,7 +173,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -124,8 +193,11 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             </span>
           </div>
 
-          {openSections.experience && (
-            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px' }}>
+          <div 
+            ref={experienceContentRef}
+            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
@@ -222,7 +294,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -242,71 +314,76 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             </span>
           </div>
 
-          {openSections.press && pressHighlights.length > 0 && (
-            <div style={{ marginTop: '40px' }}>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse" style={{ fontSize: '17px' }}>
-                  <tbody>
-                    {pressHighlights.map((highlight) => {
-                      const formattedDate = new Date(highlight.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })
+          <div 
+            ref={pressContentRef}
+            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+          >
+            {pressHighlights.length > 0 && (
+              <div style={{ marginTop: '40px', paddingBottom: '20px' }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse" style={{ fontSize: '17px' }}>
+                    <tbody>
+                      {pressHighlights.map((highlight) => {
+                        const formattedDate = new Date(highlight.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
 
-                      return (
-                        <tr
-                          key={highlight._id}
-                          className="border-b border-white/10 hover:bg-white/5 transition-colors"
-                        >
-                          <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
-                            <AnimatedLink
-                              href={highlight.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="no-underline"
-                            >
-                              {highlight.title}
-                            </AnimatedLink>
-                          </td>
-                          <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
-                            <AnimatedLink
-                              href={highlight.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="no-underline"
-                            >
-                              {formattedDate}
-                            </AnimatedLink>
-                          </td>
-                          <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
-                            <AnimatedLink
-                              href={highlight.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="no-underline"
-                            >
-                              {highlight.publication}
-                            </AnimatedLink>
-                          </td>
-                          <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
-                            <AnimatedLink
-                              href={highlight.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="no-underline"
-                            >
-                              ↗
-                            </AnimatedLink>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                        return (
+                          <tr
+                            key={highlight._id}
+                            className="border-b border-white/10 hover:bg-white/5 transition-colors"
+                          >
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
+                              <AnimatedLink
+                                href={highlight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="no-underline"
+                              >
+                                {highlight.title}
+                              </AnimatedLink>
+                            </td>
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
+                              <AnimatedLink
+                                href={highlight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="no-underline"
+                              >
+                                {formattedDate}
+                              </AnimatedLink>
+                            </td>
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
+                              <AnimatedLink
+                                href={highlight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="no-underline"
+                              >
+                                {highlight.publication}
+                              </AnimatedLink>
+                            </td>
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
+                              <AnimatedLink
+                                href={highlight.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="no-underline"
+                              >
+                                ↗
+                              </AnimatedLink>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -326,8 +403,11 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             </span>
           </div>
 
-          {openSections.contact && (
-            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px' }}>
+          <div 
+            ref={contactContentRef}
+            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
@@ -355,7 +435,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
