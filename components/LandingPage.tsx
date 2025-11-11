@@ -22,21 +22,8 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
 
-  const aboutSectionRef = useRef<HTMLDivElement>(null)
-  const experienceSectionRef = useRef<HTMLDivElement>(null)
-  const pressSectionRef = useRef<HTMLDivElement>(null)
-  const contactSectionRef = useRef<HTMLDivElement>(null)
-
   const toggleSection = (section: string) => {
-    const isOpening = !openSections[section]
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
-    
-    // Scroll up by 500px when opening a section
-    if (isOpening) {
-      setTimeout(() => {
-        window.scrollBy({ top: -500, behavior: 'smooth' })
-      }, 100)
-    }
   }
 
   useEffect(() => {
@@ -142,7 +129,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* About Section */}
-      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -191,7 +178,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Experience Section */}
-      <div ref={experienceSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -312,7 +299,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Press Section */}
-      <div ref={pressSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -401,7 +388,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -447,6 +434,30 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                   </AnimatedLink>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex flex-col" style={{ padding: '60px 90px', paddingBottom: '120px' }}>
+        <div className="w-full">
+          <div className="border-t border-white" />
+          <div style={{ paddingTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', opacity: 0.7 }}>
+            <div>© {new Date().getFullYear()} Pablo Gnecco</div>
+            <div style={{ display: 'flex', gap: '30px' }}>
+              <AnimatedLink
+                href="https://instagram.com/yopablo"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram
+              </AnimatedLink>
+              <AnimatedLink
+                href="mailto:hello@pablognecco.com"
+              >
+                Email
+              </AnimatedLink>
             </div>
           </div>
         </div>
