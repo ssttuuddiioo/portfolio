@@ -45,6 +45,215 @@ export function LandingPage() {
         </div>
       </div>
 
+      {/* About Section */}
+      <div className="min-h-screen flex flex-col p-8 md:p-12 lg:p-16">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="border-t border-white mb-12" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">About</h2>
+              <div className="w-3 h-3 bg-white rounded-full" />
+            </div>
+            
+            <div className="md:col-span-2 space-y-6 text-lg leading-relaxed">
+              <p>
+                Pablo Gnecco is a Colombian-born experiential director and creative
+                technologist based in New York. He creates immersive installations for public
+                art, brand activations, and cultural institutions—working at the intersection
+                of motion, interaction, and physical computing.
+              </p>
+              <p>
+                Clients include Google, Intel, Sony, and Michigan Central Station. An early
+                member of The New Museum&apos;s NEW INC and resident artist at Mana
+                Contemporary, Pablo founded Studio Studio and the 9to5.tv festival in
+                Atlanta.
+              </p>
+              <p>
+                Currently developing permanent light installations and new media sculptures
+                while building Origen, a specialty coffee company connecting roasters with
+                Colombian farmers.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Press Section */}
+      <div className="min-h-screen flex flex-col p-8 md:p-12 lg:p-16">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="border-t border-white mb-12" />
+          
+          <h2 className="text-2xl font-bold mb-8">Press</h2>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <tbody>
+                <tr className="border-b border-white/20 hover:bg-white/5 transition-colors">
+                  <td className="py-4 pr-4">BAM Rose Cinema</td>
+                  <td className="py-4 pr-4">May 21, 2016</td>
+                  <td className="py-4 pr-4">VICE</td>
+                  <td className="py-4 text-right">
+                    <a 
+                      href="#" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-block hover:opacity-70 transition-opacity"
+                    >
+                      ↗
+                    </a>
+                  </td>
+                </tr>
+                <tr className="border-b border-white/20 hover:bg-white/5 transition-colors">
+                  <td className="py-4 pr-4">Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td className="py-4 pr-4">May 21, 2014</td>
+                  <td className="py-4 pr-4">VICE</td>
+                  <td className="py-4 text-right">
+                    <a 
+                      href="#" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-block hover:opacity-70 transition-opacity"
+                    >
+                      ↗
+                    </a>
+                  </td>
+                </tr>
+                <tr className="border-b border-white/20 hover:bg-white/5 transition-colors">
+                  <td className="py-4 pr-4">Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td className="py-4 pr-4">May 21, 2014</td>
+                  <td className="py-4 pr-4">VICE</td>
+                  <td className="py-4 text-right">
+                    <a 
+                      href="#" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-block hover:opacity-70 transition-opacity"
+                    >
+                      ↗
+                    </a>
+                  </td>
+                </tr>
+                <tr className="border-b border-white/20 hover:bg-white/5 transition-colors">
+                  <td className="py-4 pr-4">Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td className="py-4 pr-4">May 21, 2014</td>
+                  <td className="py-4 pr-4">VICE</td>
+                  <td className="py-4 text-right">
+                    <a 
+                      href="#" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-block hover:opacity-70 transition-opacity"
+                    >
+                      ↗
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Experience Section */}
+      <div className="min-h-screen flex flex-col p-8 md:p-12 lg:p-16">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="border-t border-white mb-12" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Experience</h2>
+              <div className="w-3 h-3 bg-white rounded-full" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+            {/* Left Column */}
+            <div className="space-y-12">
+              <div>
+                <div className="text-sm mb-2">2022-2025</div>
+                <h3 className="text-xl font-bold mb-1">Experiential Director</h3>
+                <a 
+                  href="https://chemistrycreative.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  Chemistry Creative Inc. ↗
+                </a>
+              </div>
+
+              <div>
+                <div className="text-sm mb-2">2018-2019</div>
+                <h3 className="text-xl font-bold mb-1">Creative Technologist</h3>
+                <a 
+                  href="https://invisiblenorth.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  Invisible North ↗
+                </a>
+              </div>
+
+              <div>
+                <div className="text-sm mb-2">2012-2013</div>
+                <h3 className="text-xl font-bold mb-1">Motion Designer</h3>
+                <a 
+                  href="https://leaddog.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  Leaddog Marketing ↗
+                </a>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-12">
+              <div>
+                <div className="text-sm mb-2">2015-Present</div>
+                <h3 className="text-xl font-bold mb-1">Founder</h3>
+                <a 
+                  href="https://studio-studio.us" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  Studio–Studio ↗
+                </a>
+              </div>
+
+              <div>
+                <div className="text-sm mb-2">2017-2018</div>
+                <h3 className="text-xl font-bold mb-1">Creative Technologist</h3>
+                <a 
+                  href="https://giantspoon.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  Giant Spoon ↗
+                </a>
+              </div>
+
+              <div>
+                <div className="text-sm mb-2">2010-2011</div>
+                <h3 className="text-xl font-bold mb-1">Designer</h3>
+                <a 
+                  href="https://movl.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                >
+                  MOVL ↗
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   )
