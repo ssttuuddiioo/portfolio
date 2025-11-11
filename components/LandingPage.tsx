@@ -30,12 +30,22 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     const contentRef = aboutContentRef.current
     if (contentRef) {
       if (openSections.about) {
+        contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
           { height: 0, opacity: 0 },
-          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+          { 
+            height: 'auto', 
+            opacity: 1, 
+            duration: 0.6, 
+            ease: 'power2.out',
+            onComplete: () => {
+              contentRef.style.overflow = 'visible'
+            }
+          }
         )
       } else {
+        contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
     }
@@ -45,12 +55,22 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     const contentRef = experienceContentRef.current
     if (contentRef) {
       if (openSections.experience) {
+        contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
           { height: 0, opacity: 0 },
-          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+          { 
+            height: 'auto', 
+            opacity: 1, 
+            duration: 0.6, 
+            ease: 'power2.out',
+            onComplete: () => {
+              contentRef.style.overflow = 'visible'
+            }
+          }
         )
       } else {
+        contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
     }
@@ -60,12 +80,22 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     const contentRef = pressContentRef.current
     if (contentRef) {
       if (openSections.press) {
+        contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
           { height: 0, opacity: 0 },
-          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+          { 
+            height: 'auto', 
+            opacity: 1, 
+            duration: 0.6, 
+            ease: 'power2.out',
+            onComplete: () => {
+              contentRef.style.overflow = 'visible'
+            }
+          }
         )
       } else {
+        contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
     }
@@ -75,12 +105,22 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     const contentRef = contactContentRef.current
     if (contentRef) {
       if (openSections.contact) {
+        contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
           { height: 0, opacity: 0 },
-          { height: 'auto', opacity: 1, duration: 0.6, ease: 'power2.out' }
+          { 
+            height: 'auto', 
+            opacity: 1, 
+            duration: 0.6, 
+            ease: 'power2.out',
+            onComplete: () => {
+              contentRef.style.overflow = 'visible'
+            }
+          }
         )
       } else {
+        contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
     }
@@ -146,7 +186,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
 
           <div 
             ref={aboutContentRef}
-            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+            style={{ height: 0, opacity: 0 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
@@ -195,7 +235,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
 
           <div 
             ref={experienceContentRef}
-            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+            style={{ height: 0, opacity: 0 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
@@ -316,7 +356,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
 
           <div 
             ref={pressContentRef}
-            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+            style={{ height: 0, opacity: 0 }}
           >
             {pressHighlights.length > 0 && (
               <div style={{ marginTop: '40px', paddingBottom: '20px' }}>
@@ -405,7 +445,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
 
           <div 
             ref={contactContentRef}
-            style={{ height: 0, overflow: 'hidden', opacity: 0 }}
+            style={{ height: 0, opacity: 0 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px', marginTop: '40px', paddingBottom: '20px' }}>
               <div>
