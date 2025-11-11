@@ -22,8 +22,21 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
 
+  const aboutSectionRef = useRef<HTMLDivElement>(null)
+  const experienceSectionRef = useRef<HTMLDivElement>(null)
+  const pressSectionRef = useRef<HTMLDivElement>(null)
+  const contactSectionRef = useRef<HTMLDivElement>(null)
+
   const toggleSection = (section: string) => {
+    const isOpening = !openSections[section]
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+    
+    // Scroll up by 500px when opening a section
+    if (isOpening) {
+      setTimeout(() => {
+        window.scrollBy({ top: -500, behavior: 'smooth' })
+      }, 100)
+    }
   }
 
   useEffect(() => {
@@ -129,7 +142,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -178,7 +191,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div ref={experienceSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -299,7 +312,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div ref={pressSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -388,7 +401,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Contact Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
