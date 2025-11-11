@@ -46,30 +46,30 @@ export function LandingPage() {
       </div>
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: '60px 100px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '70px' }} />
           
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '80px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px' }}>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '20px' }}>About</h2>
-              <div className="w-2 h-2 bg-white rounded-full" />
+              <h2 style={{ fontSize: '22px', fontWeight: '400', marginBottom: '24px', letterSpacing: '-0.01em' }}>About</h2>
+              <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
             </div>
             
-            <div className="space-y-6" style={{ fontSize: '18px', lineHeight: '1.65', maxWidth: '900px' }}>
-              <p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: '18px', lineHeight: '1.6' }}>
+              <p style={{ margin: 0 }}>
                 Pablo Gnecco is a Colombian-born experiential director and creative
                 technologist based in New York. He creates immersive installations for public
                 art, brand activations, and cultural institutions—working at the intersection
                 of motion, interaction, and physical computing.
               </p>
-              <p>
+              <p style={{ margin: 0 }}>
                 Clients include Google, Intel, Sony, and Michigan Central Station. An early
                 member of The New Museum&apos;s NEW INC and resident artist at Mana
                 Contemporary, Pablo founded Studio Studio and the 9to5.tv festival in
                 Atlanta.
               </p>
-              <p>
+              <p style={{ margin: 0 }}>
                 Currently developing permanent light installations and new media sculptures
                 while building Origen, a specialty coffee company connecting roasters with
                 Colombian farmers.
@@ -80,20 +80,20 @@ export function LandingPage() {
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: '60px 100px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '70px' }} />
           
-          <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '40px' }}>Press</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: '400', marginBottom: '48px', letterSpacing: '-0.01em' }}>Press</h2>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse" style={{ fontSize: '16px' }}>
+            <table className="w-full text-left border-collapse" style={{ fontSize: '17px' }}>
               <tbody>
                 <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="py-5 pr-6">BAM Rose Cinema</td>
-                  <td className="py-5 pr-6">May 21, 2016</td>
-                  <td className="py-5 pr-6">VICE</td>
-                  <td className="py-5 text-right">
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>BAM Rose Cinema</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>May 21, 2016</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>VICE</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
                     <a 
                       href="#" 
                       target="_blank" 
@@ -105,10 +105,10 @@ export function LandingPage() {
                   </td>
                 </tr>
                 <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="py-5 pr-6">Interactive Installation Turns Hand Gestures Into GIFs</td>
-                  <td className="py-5 pr-6">May 21, 2014</td>
-                  <td className="py-5 pr-6">VICE</td>
-                  <td className="py-5 text-right">
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>May 21, 2014</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>VICE</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
                     <a 
                       href="#" 
                       target="_blank" 
@@ -120,10 +120,10 @@ export function LandingPage() {
                   </td>
                 </tr>
                 <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="py-5 pr-6">Interactive Installation Turns Hand Gestures Into GIFs</td>
-                  <td className="py-5 pr-6">May 21, 2014</td>
-                  <td className="py-5 pr-6">VICE</td>
-                  <td className="py-5 text-right">
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>May 21, 2014</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>VICE</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
                     <a 
                       href="#" 
                       target="_blank" 
@@ -135,10 +135,10 @@ export function LandingPage() {
                   </td>
                 </tr>
                 <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="py-5 pr-6">Interactive Installation Turns Hand Gestures Into GIFs</td>
-                  <td className="py-5 pr-6">May 21, 2014</td>
-                  <td className="py-5 pr-6">VICE</td>
-                  <td className="py-5 text-right">
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>Interactive Installation Turns Hand Gestures Into GIFs</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>May 21, 2014</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>VICE</td>
+                  <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
                     <a 
                       href="#" 
                       target="_blank" 
@@ -156,56 +156,56 @@ export function LandingPage() {
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: '60px 100px', minHeight: '100vh' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px', minHeight: '100vh' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '70px' }} />
           
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '80px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '120px' }}>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '20px' }}>Experience</h2>
-              <div className="w-2 h-2 bg-white rounded-full" />
+              <h2 style={{ fontSize: '22px', fontWeight: '400', marginBottom: '24px', letterSpacing: '-0.01em' }}>Experience</h2>
+              <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '100px', fontSize: '16px', maxWidth: '900px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '140px' }}>
               {/* Left Column */}
-              <div className="space-y-12">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2022-2025</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Experiential Director</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2022-2025</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Experiential Director</h3>
                   <a 
                     href="https://chemistrycreative.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     Chemistry Creative Inc. ↗
                   </a>
                 </div>
 
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2018-2019</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Creative Technologist</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2018-2019</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
                   <a 
                     href="https://invisiblenorth.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     Invisible North ↗
                   </a>
                 </div>
 
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2012-2013</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Motion Designer</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2012-2013</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Motion Designer</h3>
                   <a 
                     href="https://leaddog.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     Leaddog Marketing ↗
                   </a>
@@ -213,44 +213,44 @@ export function LandingPage() {
               </div>
 
               {/* Right Column */}
-              <div className="space-y-12">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2015-Present</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Founder</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2015-Present</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Founder</h3>
                   <a 
                     href="https://studio-studio.us" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     Studio–Studio ↗
                   </a>
                 </div>
 
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2017-2018</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Creative Technologist</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2017-2018</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
                   <a 
                     href="https://giantspoon.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     Giant Spoon ↗
                   </a>
                 </div>
 
                 <div>
-                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2010-2011</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Designer</h3>
+                  <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2010-2011</div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Designer</h3>
                   <a 
                     href="https://movl.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                    style={{ fontSize: '16px' }}
+                    style={{ fontSize: '18px' }}
                   >
                     MOVL ↗
                   </a>
