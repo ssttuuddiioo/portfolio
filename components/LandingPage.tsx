@@ -96,43 +96,43 @@ export function LandingPage() {
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2022-2025</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Experiential Director</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://chemistrycreative.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     Chemistry Creative Inc. ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
 
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2018-2019</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://invisiblenorth.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     Invisible North ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
 
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2012-2013</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Motion Designer</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://leaddog.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     Leaddog Marketing ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
               </div>
 
@@ -141,43 +141,43 @@ export function LandingPage() {
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2015-Present</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Founder</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://studio-studio.us" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     Studio–Studio ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
 
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2017-2018</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://giantspoon.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     Giant Spoon ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
 
                 <div>
                   <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2010-2011</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Designer</h3>
-                  <a 
+                  <AnimatedLink
                     href="https://movl.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1"
                     style={{ fontSize: '18px' }}
                   >
                     MOVL ↗
-                  </a>
+                  </AnimatedLink>
                 </div>
               </div>
             </div>

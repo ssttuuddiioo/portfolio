@@ -1,6 +1,7 @@
 import { client, isSanityConfigured } from '@/sanity/lib/client'
 import { PressHighlight } from '@/types/pressHighlight'
 import { SiteSettings } from '@/types/siteSettings'
+import { AnimatedLink } from './AnimatedLink'
 
 async function getPressHighlights(): Promise<PressHighlight[]> {
   if (!isSanityConfigured()) {
@@ -121,14 +122,14 @@ export async function PressHighlights() {
                       }`}
                       style={{ padding: '5px' }}
                     >
-                      <a
+                      <AnimatedLink
                         href={highlight.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="no-underline"
                       >
                         {highlight.title}
-                      </a>
+                      </AnimatedLink>
                     </td>
                     <td
                       className={`text-lg md:text-xl whitespace-nowrap ${
@@ -136,14 +137,14 @@ export async function PressHighlights() {
                       }`}
                       style={{ padding: '5px' }}
                     >
-                      <a
+                      <AnimatedLink
                         href={highlight.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="no-underline"
                       >
                         {formattedDate}
-                      </a>
+                      </AnimatedLink>
                     </td>
                     <td
                       className={`text-lg md:text-xl ${
@@ -151,14 +152,14 @@ export async function PressHighlights() {
                       }`}
                       style={{ padding: '5px' }}
                     >
-                      <a
+                      <AnimatedLink
                         href={highlight.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="no-underline"
                       >
                         {highlight.publication}
-                      </a>
+                      </AnimatedLink>
                     </td>
                     <td
                       className={`text-right text-2xl ${
@@ -166,14 +167,14 @@ export async function PressHighlights() {
                       }`}
                       style={{ padding: '5px' }}
                     >
-                      <a
+                      <AnimatedLink
                         href={highlight.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="no-underline"
                       >
                         ↗
-                      </a>
+                      </AnimatedLink>
                     </td>
                   </tr>
                 )
