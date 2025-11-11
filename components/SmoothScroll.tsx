@@ -46,11 +46,21 @@ export function SmoothScroll({ children }: SmoothScrollProps) {
     updateHeight()
     window.addEventListener('resize', updateHeight)
 
+    // Watch for content height changes (e.g., accordion expansions)
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeight()
+    })
+
+    if (scrollContent) {
+      resizeObserver.observe(scrollContent)
+    }
+
     // Start smooth scroll loop
     requestAnimationFrame(smoothScroll)
 
     return () => {
       window.removeEventListener('resize', updateHeight)
+      resizeObserver.disconnect()
       document.body.style.height = ''
     }
   }, [])

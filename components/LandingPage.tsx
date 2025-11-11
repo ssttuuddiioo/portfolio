@@ -2,8 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
+import Image from 'next/image'
 import { AnimatedLink } from './AnimatedLink'
+import { ImageRevealShader } from './ImageRevealShader'
 import { PressHighlight } from '@/types/pressHighlight'
+
+gsap.registerPlugin(ScrollToPlugin)
 
 interface LandingPageProps {
   pressHighlights: PressHighlight[]
@@ -16,14 +21,36 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     press: false,
     contact: false,
   })
+  const [isPabloHovered, setIsPabloHovered] = useState(false)
 
   const aboutContentRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
+  const contactSectionRef = useRef<HTMLDivElement>(null)
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const scrollToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    
+    // Scroll to the contact section with ease in/out
+    if (contactSectionRef.current) {
+      const targetPosition = contactSectionRef.current.offsetTop
+      gsap.to(window, {
+        scrollTo: { y: targetPosition, autoKill: true },
+        duration: 1.2,
+        ease: 'power2.inOut',
+        onUpdate: function() {
+          // Open the section when we're about 70% through the scroll animation
+          if (this.progress() >= 0.7 && !openSections.contact) {
+            setOpenSections(prev => ({ ...prev, contact: true }))
+          }
+        }
+      })
+    }
   }
 
   useEffect(() => {
@@ -129,7 +156,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
   return (
     <div className="bg-[#0020FF] text-white">
       {/* Page 1 - Intro */}
-      <div className="min-h-screen flex flex-col p-8 md:p-12 lg:p-16">
+      <div className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
         <div className="flex-1 flex flex-col justify-between">
           {/* Top Section - Large Heading */}
           <div className="flex-1" style={{ paddingTop: '50px', paddingLeft: '40px' }}>
@@ -141,6 +168,8 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 rel="noopener noreferrer"
                 className="underline"
                 style={{ color: '#FFFFFF !important', textDecorationColor: 'white' }}
+                onMouseEnter={() => setIsPabloHovered(true)}
+                onMouseLeave={() => setIsPabloHovered(false)}
               >
                 Pablo
               </AnimatedLink>
@@ -159,17 +188,52 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             </AnimatedLink>
             <AnimatedLink 
               href="#contact"
+              onClick={scrollToContact}
               style={{ fontSize: '2.5rem', lineHeight: '1', marginLeft: '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
               className="font-bold underline cursor-pointer"
             >
               Contact
             </AnimatedLink>
+            <AnimatedLink 
+              href="#experiments"
+              style={{ fontSize: '2.5rem', lineHeight: '1', marginLeft: '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+              className="font-bold underline cursor-pointer"
+            >
+              Experiments
+            </AnimatedLink>
+            <AnimatedLink 
+              href="#thoughts"
+              style={{ fontSize: '2.5rem', lineHeight: '1', marginLeft: '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+              className="font-bold underline cursor-pointer"
+            >
+              Thoughts
+            </AnimatedLink>
           </div>
+        </div>
+        
+        {/* Pablo Portrait - Appears on hover with shader effect */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '40px',
+            right: '90px',
+            width: '350px',
+            height: '480px',
+            zIndex: 9999,
+            pointerEvents: 'none',
+          }}
+        >
+          <ImageRevealShader
+            imageUrl="/pablo-portrait.jpg"
+            isVisible={isPabloHovered}
+            width={350}
+            height={480}
+          />
         </div>
       </div>
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -193,7 +257,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: '18px', lineHeight: '1.6' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: '18px', lineHeight: '1.6', maxWidth: '70%', marginLeft: 'auto' }}>
                 <p style={{ margin: 0 }}>
                   Pablo Gnecco is a Colombian-born experiential director and creative
                   technologist based in New York. He creates immersive installations for public
@@ -218,7 +282,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -242,7 +306,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '140px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '350px', maxWidth: '70%', marginLeft: 'auto' }}>
                 {/* Left Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
                   <div>
@@ -294,7 +358,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                     <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2015-Present</div>
                     <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Founder</h3>
                     <AnimatedLink
-                      href="https://studio-studio.us" 
+                      href="https://studiostudio.nyc" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1"
@@ -339,7 +403,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -428,7 +492,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Contact Section */}
-      <div className="flex flex-col" style={{ padding: '60px 90px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: '60px 90px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -451,27 +515,79 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
               <div>
                 <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
               </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: '18px', lineHeight: '1.6' }}>
-                <div>
-                  <p style={{ margin: 0, marginBottom: '12px', opacity: 0.7 }}>Email</p>
-                  <AnimatedLink
-                    href="mailto:hello@pablognecco.com"
-                    style={{ fontSize: '20px', fontWeight: '500' }}
-                  >
-                    hello@pablognecco.com
-                  </AnimatedLink>
-                </div>
-                <div>
-                  <p style={{ margin: 0, marginBottom: '12px', opacity: 0.7 }}>Instagram</p>
-                  <AnimatedLink
-                    href="https://instagram.com/yopablo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '20px', fontWeight: '500' }}
-                  >
-                    @yopablo
-                  </AnimatedLink>
+
+              <div style={{ maxWidth: '70%', marginLeft: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '350px', fontSize: '18px', lineHeight: '1.6' }}>
+                  
+                  {/* Left Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    {/* Email - Studio Studio */}
+                    <div>
+                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>E-MAIL</div>
+                      <AnimatedLink
+                        href="mailto:hello@studiostudio.nyc"
+                        style={{ fontSize: '18px' }}
+                      >
+                        hello@studiostudio.nyc ↗
+                      </AnimatedLink>
+                    </div>
+
+                    {/* LinkedIn */}
+                    <div>
+                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>LINKEDIN</div>
+                      <AnimatedLink
+                        href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '18px' }}
+                      >
+                        pablo-gnecco ↗
+                      </AnimatedLink>
+                    </div>
+
+                    {/* Instagram */}
+                    <div>
+                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>INSTAGRAM</div>
+                      <AnimatedLink
+                        href="https://instagram.com/yopablo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '18px' }}
+                      >
+                        @yopablo ↗
+                      </AnimatedLink>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    {/* X.com */}
+                    <div>
+                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>X.COM</div>
+                      <AnimatedLink
+                        href="https://x.com/yopablo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '18px' }}
+                      >
+                        @yopablo ↗
+                      </AnimatedLink>
+                    </div>
+
+                    {/* Vimeo */}
+                    <div>
+                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>VIMEO</div>
+                      <AnimatedLink
+                        href="https://vimeo.com/yopablo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '18px' }}
+                      >
+                        yopablo ↗
+                      </AnimatedLink>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -480,7 +596,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col" style={{ padding: '60px 90px', paddingBottom: '120px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 90px 120px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           <div style={{ paddingTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', opacity: 0.7 }}>

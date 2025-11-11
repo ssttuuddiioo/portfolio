@@ -10,9 +10,12 @@ interface AnimatedLinkProps {
   rel?: string
   className?: string
   style?: React.CSSProperties
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export function AnimatedLink({ href, children, target, rel, className = '', style = {} }: AnimatedLinkProps) {
+export function AnimatedLink({ href, children, target, rel, className = '', style = {}, onMouseEnter, onMouseLeave, onClick }: AnimatedLinkProps) {
   const linkRef = useRef<HTMLAnchorElement>(null)
   const highlightRef = useRef<HTMLSpanElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
@@ -38,6 +41,9 @@ export function AnimatedLink({ href, children, target, rel, className = '', styl
         duration: 0.3,
         ease: 'power2.inOut',
       })
+      
+      // Call custom handler if provided
+      if (onMouseEnter) onMouseEnter()
     }
 
     const handleMouseLeave = () => {
@@ -54,6 +60,9 @@ export function AnimatedLink({ href, children, target, rel, className = '', styl
         duration: 0.3,
         ease: 'power2.inOut',
       })
+      
+      // Call custom handler if provided
+      if (onMouseLeave) onMouseLeave()
     }
 
     link.addEventListener('mouseenter', handleMouseEnter)
@@ -63,7 +72,7 @@ export function AnimatedLink({ href, children, target, rel, className = '', styl
       link.removeEventListener('mouseenter', handleMouseEnter)
       link.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [])
+  }, [onMouseEnter, onMouseLeave])
 
   return (
     <a
@@ -71,6 +80,7 @@ export function AnimatedLink({ href, children, target, rel, className = '', styl
       href={href}
       target={target}
       rel={rel}
+      onClick={onClick}
       className={`relative inline-block ${className}`}
       style={{ 
         ...style, 
