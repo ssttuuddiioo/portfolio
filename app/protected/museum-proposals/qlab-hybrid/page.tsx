@@ -77,17 +77,17 @@ export default function QLabHybridArchitecturePage() {
           📄 Download Proposal
         </button>
       </div>
-      <iframe
-        srcDoc={htmlContent}
-        style={{
-          width: '100%',
-          height: '100vh',
-          border: 'none',
-          display: 'block',
-        }}
-        title="Holocaust Museum QLab Hybrid Architecture"
-      />
-    </div>
+        <iframe
+          srcDoc={htmlContent}
+          style={{
+            width: '100%',
+            height: '100vh',
+            border: 'none',
+            display: 'block',
+          }}
+          title="Holocaust Museum QLab Hybrid Architecture"
+        />
+      </div>
   )
 }
 

@@ -46,17 +46,17 @@ export function LandingPage() {
       </div>
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: '80px 160px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 100px' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '60px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
           
-          <div className="grid grid-cols-12 gap-8">
-            <div className="col-span-3">
-              <h2 className="text-xl font-normal mb-6">About</h2>
-              <div className="w-2.5 h-2.5 bg-white rounded-full" />
+          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '80px' }}>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '20px' }}>About</h2>
+              <div className="w-2 h-2 bg-white rounded-full" />
             </div>
             
-            <div className="col-span-9 space-y-5" style={{ fontSize: '18px', lineHeight: '1.7' }}>
+            <div className="space-y-6" style={{ fontSize: '18px', lineHeight: '1.65', maxWidth: '900px' }}>
               <p>
                 Pablo Gnecco is a Colombian-born experiential director and creative
                 technologist based in New York. He creates immersive installations for public
@@ -80,11 +80,11 @@ export function LandingPage() {
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: '80px 160px' }}>
+      <div className="flex flex-col" style={{ padding: '60px 100px' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '60px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
           
-          <h2 className="text-xl font-normal mb-10">Press</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '40px' }}>Press</h2>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse" style={{ fontSize: '16px' }}>
@@ -156,99 +156,105 @@ export function LandingPage() {
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: '80px 160px', minHeight: '100vh' }}>
+      <div className="flex flex-col" style={{ padding: '60px 100px', minHeight: '100vh' }}>
         <div className="w-full">
-          <div className="border-t border-white" style={{ marginBottom: '60px' }} />
+          <div className="border-t border-white" style={{ marginBottom: '80px' }} />
           
-          <div className="grid grid-cols-12 gap-8 mb-16">
-            <div className="col-span-3">
-              <h2 className="text-xl font-normal mb-6">Experience</h2>
-              <div className="w-2.5 h-2.5 bg-white rounded-full" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-20 gap-y-16" style={{ fontSize: '16px' }}>
-            {/* Left Column */}
-            <div className="space-y-16">
-              <div>
-                <div className="mb-2 opacity-80">2022-2025</div>
-                <h3 className="text-lg font-bold mb-1">Experiential Director</h3>
-                <a 
-                  href="https://chemistrycreative.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  Chemistry Creative Inc. ↗
-                </a>
-              </div>
-
-              <div>
-                <div className="mb-2 opacity-80">2018-2019</div>
-                <h3 className="text-lg font-bold mb-1">Creative Technologist</h3>
-                <a 
-                  href="https://invisiblenorth.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  Invisible North ↗
-                </a>
-              </div>
-
-              <div>
-                <div className="mb-2 opacity-80">2012-2013</div>
-                <h3 className="text-lg font-bold mb-1">Motion Designer</h3>
-                <a 
-                  href="https://leaddog.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  Leaddog Marketing ↗
-                </a>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '80px' }}>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: '400', marginBottom: '20px' }}>Experience</h2>
+              <div className="w-2 h-2 bg-white rounded-full" />
             </div>
 
-            {/* Right Column */}
-            <div className="space-y-16">
-              <div>
-                <div className="mb-2 opacity-80">2015-Present</div>
-                <h3 className="text-lg font-bold mb-1">Founder</h3>
-                <a 
-                  href="https://studio-studio.us" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  Studio–Studio ↗
-                </a>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '100px', fontSize: '16px', maxWidth: '900px' }}>
+              {/* Left Column */}
+              <div className="space-y-12">
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2022-2025</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Experiential Director</h3>
+                  <a 
+                    href="https://chemistrycreative.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    Chemistry Creative Inc. ↗
+                  </a>
+                </div>
+
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2018-2019</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Creative Technologist</h3>
+                  <a 
+                    href="https://invisiblenorth.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    Invisible North ↗
+                  </a>
+                </div>
+
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2012-2013</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Motion Designer</h3>
+                  <a 
+                    href="https://leaddog.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    Leaddog Marketing ↗
+                  </a>
+                </div>
               </div>
 
-              <div>
-                <div className="mb-2 opacity-80">2017-2018</div>
-                <h3 className="text-lg font-bold mb-1">Creative Technologist</h3>
-                <a 
-                  href="https://giantspoon.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  Giant Spoon ↗
-                </a>
-              </div>
+              {/* Right Column */}
+              <div className="space-y-12">
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2015-Present</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Founder</h3>
+                  <a 
+                    href="https://studio-studio.us" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    Studio–Studio ↗
+                  </a>
+                </div>
 
-              <div>
-                <div className="mb-2 opacity-80">2010-2011</div>
-                <h3 className="text-lg font-bold mb-1">Designer</h3>
-                <a 
-                  href="https://movl.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
-                >
-                  MOVL ↗
-                </a>
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2017-2018</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Creative Technologist</h3>
+                  <a 
+                    href="https://giantspoon.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    Giant Spoon ↗
+                  </a>
+                </div>
+
+                <div>
+                  <div style={{ marginBottom: '10px', fontSize: '15px' }}>• 2010-2011</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '6px' }}>Designer</h3>
+                  <a 
+                    href="https://movl.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    style={{ fontSize: '16px' }}
+                  >
+                    MOVL ↗
+                  </a>
+                </div>
               </div>
             </div>
           </div>
