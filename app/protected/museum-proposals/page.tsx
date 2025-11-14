@@ -31,7 +31,7 @@ export default function MuseumProposalsPage() {
               marginBottom: '20px',
             }}
           >
-            Holocaust Museum Interactive Installation
+            Museum System Interactive Installation
           </h1>
           <p
             style={{
@@ -58,7 +58,7 @@ export default function MuseumProposalsPage() {
             </h3>
             <p style={{ color: '#34495e', lineHeight: '1.6', margin: 0 }}>
               We are pleased to present two comprehensive system architecture
-              proposals for the Holocaust Museum interactive installation. Both
+              proposals for the museum system interactive installation. Both
               solutions deliver the same powerful visitor experience: a
               2-minute synchronized video presentation followed by engaging
               touchscreen Q&amp;A sessions. The key difference lies in the

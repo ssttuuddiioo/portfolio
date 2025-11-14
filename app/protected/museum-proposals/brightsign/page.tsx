@@ -22,7 +22,7 @@ export default function BrightSignArchitecturePage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'holocaust-museum-brightsign-architecture.html'
+    link.download = 'museum-system-brightsign-architecture.html'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -85,7 +85,7 @@ export default function BrightSignArchitecturePage() {
           border: 'none',
           display: 'block',
         }}
-        title="Holocaust Museum BrightSign Architecture"
+        title="Museum System BrightSign Architecture"
       />
     </div>
   )
@@ -96,7 +96,7 @@ const htmlContent = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holocaust Museum System - BrightSign-Centric Architecture</title>
+    <title>Museum System Proposal - BrightSign-Centric Architecture</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -212,7 +212,7 @@ const htmlContent = `<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
-        <h1>Holocaust Museum Interactive Installation<br><small>BrightSign-Centric Architecture</small></h1>
+        <h1>Museum System Interactive Installation<br><small>BrightSign-Centric Architecture</small></h1>
         
         <div class="comparison-note">
             <h4 style="margin-top: 0; color: #2c3e50;">Simplified Architecture Benefits:</h4>

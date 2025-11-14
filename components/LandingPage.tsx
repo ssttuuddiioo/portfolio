@@ -4,9 +4,16 @@ import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import Image from 'next/image'
+import { Instagram } from 'lucide-react'
 import { AnimatedLink } from './AnimatedLink'
 import { ImageRevealShader } from './ImageRevealShader'
 import { PressHighlight } from '@/types/pressHighlight'
+import dynamic from 'next/dynamic'
+
+// Dynamically import the 3D gallery to avoid SSR issues
+const InfiniteGallery = dynamic(() => import('./ui/3d-gallery-photography'), {
+  ssr: false,
+})
 
 gsap.registerPlugin(ScrollToPlugin)
 
@@ -23,6 +30,20 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
   })
   const [isPabloHovered, setIsPabloHovered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isWorkHovered, setIsWorkHovered] = useState(false)
+  const [hoveredProject, setHoveredProject] = useState<{ title?: string; client?: string } | null>(null)
+
+  // Work gallery images with project info
+  const workImages = [
+    { src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&q=80', alt: 'Digital Installation', title: 'Digital Installation', client: 'Google Arts', url: '#project-1' },
+    { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80', alt: 'Interactive Sculpture', title: 'Interactive Sculpture', client: 'Intel Labs', url: '#project-2' },
+    { src: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&q=80', alt: 'Light Projection', title: 'Light Projection', client: 'Michigan Central', url: '#project-3' },
+    { src: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80', alt: 'Data Visualization', title: 'Data Visualization', client: 'Sony Music', url: '#project-4' },
+    { src: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&q=80', alt: 'Immersive Experience', title: 'Immersive Experience', client: 'The New Museum', url: '#project-5' },
+    { src: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80', alt: 'Generative Art', title: 'Generative Art', client: 'Mana Contemporary', url: '#project-6' },
+    { src: 'https://images.unsplash.com/photo-1639322537228-f710d846310a?w=1200&q=80', alt: 'Spatial Computing', title: 'Spatial Computing', client: 'Studio Studio', url: '#project-7' },
+    { src: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1200&q=80', alt: 'Media Architecture', title: 'Media Architecture', client: 'Chemistry Creative', url: '#project-8' },
+  ]
 
   const aboutContentRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
@@ -64,6 +85,38 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Handle ESC key to close gallery
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isWorkHovered) {
+        setIsWorkHovered(false)
+        setHoveredProject(null)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isWorkHovered])
+
+  const handleImageHover = (hovered: boolean, data?: { title?: string; client?: string }) => {
+    if (hovered && data) {
+      setHoveredProject(data)
+    } else {
+      setHoveredProject(null)
+    }
+  }
+
+  const handleImageClick = (url?: string) => {
+    if (url) {
+      window.location.href = url
+    }
+  }
+
+  const handleGalleryClose = () => {
+    setIsWorkHovered(false)
+    setHoveredProject(null)
+  }
 
   useEffect(() => {
     const contentRef = aboutContentRef.current
@@ -197,40 +250,57 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
           <div style={{ 
             marginTop: isMobile ? 'auto' : '80px',
             paddingLeft: isMobile ? '20px' : '40px',
+            paddingRight: isMobile ? '20px' : '40px',
             paddingBottom: isMobile ? '40px' : '0',
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            justifyContent: 'space-between',
             gap: isMobile ? '20px' : '0',
-            flexWrap: 'wrap'
           }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '20px' : '0',
+              flexWrap: 'wrap'
+            }}>
+              <AnimatedLink 
+                href="#work"
+                onMouseEnter={() => setIsWorkHovered(true)}
+                onMouseLeave={() => {
+                  // Only close if gallery isn't already open (prevents closing when moving between elements)
+                  if (!isWorkHovered) return
+                }}
+                style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
+              >
+                View Work   
+              </AnimatedLink>
+              <AnimatedLink 
+                href="#contact"
+                onClick={scrollToContact}
+                style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
+              >
+                Contact
+              </AnimatedLink>
+              <AnimatedLink 
+                href="#experiments"
+                style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
+              >
+                Experiments
+              </AnimatedLink>
+            </div>
+            
+            {/* Instagram Icon - Right aligned */}
             <AnimatedLink 
-              href="#work"
-              style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-              className="font-bold underline cursor-pointer"
+              href="https://instagram.com/yopablo"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
             >
-              View Work   
-            </AnimatedLink>
-            <AnimatedLink 
-              href="#contact"
-              onClick={scrollToContact}
-              style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-              className="font-bold underline cursor-pointer"
-            >
-              Contact
-            </AnimatedLink>
-            <AnimatedLink 
-              href="#experiments"
-              style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-              className="font-bold underline cursor-pointer"
-            >
-              Experiments
-            </AnimatedLink>
-            <AnimatedLink 
-              href="#thoughts"
-              style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-              className="font-bold underline cursor-pointer"
-            >
-              Thoughts
+              <Instagram size={isMobile ? 32 : 40} strokeWidth={1.5} />
             </AnimatedLink>
           </div>
         </div>
@@ -256,10 +326,82 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             />
           </div>
         )}
+        
+        {/* 3D Work Gallery - Overlay layer on View Work hover (hidden on mobile) */}
+        {!isMobile && isWorkHovered && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10000,
+              pointerEvents: 'auto',
+            }}
+            onClick={handleGalleryClose}
+          >
+            <InfiniteGallery
+              images={workImages}
+              speed={1.2}
+              visibleCount={12}
+              className="h-screen w-full"
+              fadeSettings={{
+                fadeIn: { start: 0.05, end: 0.25 },
+                fadeOut: { start: 0.4, end: 0.43 },
+              }}
+              blurSettings={{
+                blurIn: { start: 0.0, end: 0.1 },
+                blurOut: { start: 0.4, end: 0.43 },
+                maxBlur: 8.0,
+              }}
+              onImageHover={handleImageHover}
+              onImageClick={handleImageClick}
+            />
+            {/* Project info on hover */}
+            {hoveredProject && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '40px',
+                  left: '40px',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  pointerEvents: 'none',
+                  zIndex: 10001,
+                }}
+              >
+                <p style={{ margin: 0, marginBottom: '4px', fontWeight: 'bold' }}>{hoveredProject.title}</p>
+                <p style={{ margin: 0, opacity: 0.7 }}>{hoveredProject.client}</p>
+              </div>
+            )}
+            {/* Close instruction */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '40px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: 'white',
+                fontSize: '14px',
+                fontFamily: 'monospace',
+                textTransform: 'uppercase',
+                pointerEvents: 'none',
+                textAlign: 'center',
+                zIndex: 10001,
+              }}
+            >
+              <p style={{ margin: 0, marginBottom: '4px' }}>Use mouse wheel or arrow keys to navigate • Click images to view project</p>
+              <p style={{ margin: 0, opacity: 0.6 }}>Click background to close • ESC to exit</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 90px 60px 40px' }}>
+      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -310,7 +452,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 90px 60px 40px' }}>
+      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -513,7 +655,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 90px 60px 40px' }}>
+      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -604,7 +746,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 90px 60px 40px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -710,7 +852,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px 80px 20px' : '60px 90px 120px 40px' }}>
+      <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px 80px 20px' : '60px 40px 120px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           <div style={{ paddingTop: '40px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0', fontSize: '14px', opacity: 0.7 }}>

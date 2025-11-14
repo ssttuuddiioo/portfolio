@@ -22,7 +22,7 @@ export default function QLabHybridArchitecturePage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'holocaust-museum-qlab-hybrid-architecture.html'
+    link.download = 'museum-system-qlab-hybrid-architecture.html'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -85,7 +85,7 @@ export default function QLabHybridArchitecturePage() {
             border: 'none',
             display: 'block',
           }}
-          title="Holocaust Museum QLab Hybrid Architecture"
+          title="Museum System QLab Hybrid Architecture"
         />
       </div>
   )
@@ -96,7 +96,7 @@ const htmlContent = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holocaust Museum System - QLab + BrightSign Hybrid Architecture</title>
+    <title>Museum System Proposal - QLab + BrightSign Hybrid Architecture</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -220,7 +220,7 @@ const htmlContent = `<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
-        <h1>Holocaust Museum Interactive Installation<br><small>QLab + BrightSign Hybrid Architecture</small></h1>
+        <h1>Museum System Interactive Installation<br><small>QLab + BrightSign Hybrid Architecture</small></h1>
         
         <div class="comparison-note">
             <h4 style="margin-top: 0; color: #2c3e50;">Hybrid Approach Benefits:</h4>
