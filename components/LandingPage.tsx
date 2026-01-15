@@ -85,6 +85,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           name: formData.name,
@@ -93,12 +94,18 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         }),
       })
 
+      const data = await response.json().catch(() => ({}))
+
       if (response.ok) {
         setFormStatus('success')
         setFormData({ name: '', email: '', message: '' })
         // Reset success message after 5 seconds
         setTimeout(() => setFormStatus('idle'), 5000)
       } else {
+        // Handle Formspree error responses
+        if (data.error) {
+          console.error('Formspree error:', data.error)
+        }
         setFormStatus('error')
       }
     } catch (error) {
