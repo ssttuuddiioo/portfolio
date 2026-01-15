@@ -24,7 +24,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     press: false,
     contact: false,
   })
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isPabloHovered, setIsPabloHovered] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [hasMounted, setHasMounted] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
@@ -59,6 +62,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     setTimeout(() => setComingSoonMessage(null), 2000)
   }
 
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(selectedCategory === category ? null : category)
+  }
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
@@ -85,7 +92,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({
           name: formData.name,
@@ -94,18 +100,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
-
       if (response.ok) {
         setFormStatus('success')
         setFormData({ name: '', email: '', message: '' })
         // Reset success message after 5 seconds
         setTimeout(() => setFormStatus('idle'), 5000)
       } else {
-        // Handle Formspree error responses
-        if (data.error) {
-          console.error('Formspree error:', data.error)
-        }
         setFormStatus('error')
       }
     } catch (error) {
@@ -122,6 +122,18 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       setFormStatus('idle')
     }
   }
+
+  useEffect(() => {
+    setHasMounted(true)
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 900)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const contentRef = aboutContentRef.current
@@ -238,15 +250,19 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   // Use a constant year to avoid hydration issues
   const currentYear = 2025
+  
+  // Use mobile state only after mount to prevent hydration mismatch
+  // Server always renders desktop mode, client updates after mount
+  const mobile = hasMounted ? isMobile : false
 
   return (
-    <div className="bg-[#0020FF] text-white">
+    <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
       {/* Page 1 - Intro */}
       <div className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
         <div className="flex-1 flex flex-col justify-between">
           {/* Top Section - Large Heading */}
-          <div className="pt-5 md:pt-[50px] pl-5 md:pl-10 flex-none md:flex-1">
-            <h1 className="font-bold text-white text-[2rem] md:text-[4.6rem] leading-tight max-w-full md:max-w-[75%]">
+          <div style={{ paddingTop: mobile ? '20px' : '50px', paddingLeft: mobile ? '20px' : '40px', flex: mobile ? '0 0 auto' : '1' }}>
+            <h1 style={{ fontSize: mobile ? '2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
               Hi. I&apos;m{' '}
               <AnimatedLink
                 href="https://instagram.com/yopablo"
@@ -268,88 +284,117 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           </div>
           
           {/* Navigation Links - Bottom on mobile, top on desktop */}
-          <div className="mt-auto md:mt-20 px-5 md:px-10 pb-10 md:pb-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-0">
-            <div className="flex flex-col md:flex-row gap-5 md:gap-0 flex-wrap">
+          <div style={{ 
+            marginTop: mobile ? 'auto' : '80px',
+            paddingLeft: mobile ? '20px' : '40px',
+            paddingRight: mobile ? '20px' : '40px',
+            paddingBottom: mobile ? '40px' : '0',
+            display: 'flex', 
+            flexDirection: mobile ? 'column' : 'row',
+            alignItems: mobile ? 'flex-start' : 'center',
+            justifyContent: 'space-between',
+            gap: mobile ? '20px' : '0',
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: mobile ? 'column' : 'row',
+              gap: mobile ? '20px' : '0',
+              flexWrap: 'wrap'
+            }}>
               <AnimatedLink 
                 href="#work"
                 onClick={(e) => showComingSoon(e, 'Coming Soon')}
-                className="font-bold underline cursor-pointer text-[1.8rem] md:text-[2.5rem] leading-none text-white"
+                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
               >
                 View Work   
               </AnimatedLink>
               <AnimatedLink 
                 href="#contact"
                 onClick={scrollToContact}
-                className="font-bold underline cursor-pointer text-[1.8rem] md:text-[2.5rem] leading-none ml-0 md:ml-[30px] text-white"
+                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
               >
                 Contact
               </AnimatedLink>
               <AnimatedLink 
                 href="#experiments"
                 onClick={(e) => showComingSoon(e, 'Coming Soon')}
-                className="font-bold underline cursor-pointer text-[1.8rem] md:text-[2.5rem] leading-none ml-0 md:ml-[30px] text-white"
+                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
               >
                 Experiments
               </AnimatedLink>
             </div>
             
             {/* Social Icons - Right aligned */}
-            <div className="inline-flex items-center gap-4 md:gap-5">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: mobile ? '16px' : '20px' }}>
               <AnimatedLink 
                 href="https://instagram.com/yopablo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-white"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
               >
-                <Instagram className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
+                <Instagram size={mobile ? 32 : 40} strokeWidth={1.5} />
               </AnimatedLink>
               <AnimatedLink 
                 href="https://x.com/yopablo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-white"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
               >
-                <Twitter className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
+                <Twitter size={mobile ? 32 : 40} strokeWidth={1.5} />
               </AnimatedLink>
               <AnimatedLink 
                 href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-white"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
               >
-                <Linkedin className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
+                <Linkedin size={mobile ? 32 : 40} strokeWidth={1.5} />
               </AnimatedLink>
             </div>
           </div>
         </div>
         
         {/* Pablo Portrait - Appears on hover with shader effect (hidden on mobile) */}
-        <div
-          className="hidden md:block absolute bottom-10 right-[90px] w-[350px] h-[480px] z-[9999] pointer-events-none"
-        >
-          <ImageRevealShader
-            imageUrl="/pablo-portrait.jpg"
-            isVisible={isPabloHovered}
-            width={350}
-            height={480}
-          />
-        </div>
+        {!mobile && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '40px',
+              right: '90px',
+              width: '350px',
+              height: '480px',
+              zIndex: 9999,
+              pointerEvents: 'none',
+            }}
+          >
+            <ImageRevealShader
+              imageUrl="/pablo-portrait.jpg"
+              isVisible={isPabloHovered}
+              width={350}
+              height={480}
+            />
+          </div>
+        )}
       </div>
 
       {/* Work Section - Only visible when opened */}
       {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
-      <div className="flex flex-col px-5 py-10 md:px-10 md:py-[60px]">
+      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
             onClick={() => toggleSection('about')}
             className="cursor-pointer py-8 flex items-center justify-between"
+            style={{ paddingTop: '32px', paddingBottom: '32px' }}
           >
-            <h2 className="text-2xl md:text-[32px] font-bold tracking-tight m-0">About</h2>
-            <span className="text-[32px] md:text-[40px] font-light leading-none">
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>About</h2>
+            <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.about ? '−' : '+'}
             </span>
           </div>
@@ -358,25 +403,27 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={aboutContentRef}
             style={{ height: 0, opacity: 0 }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5 md:gap-[120px] mt-10 pb-5">
-              <div className="hidden md:block">
-                <div className="w-2 h-2 bg-white rounded-full" />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
+              {!mobile && (
+                <div>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
+                </div>
+              )}
               
-              <div className="flex flex-col gap-7 text-base md:text-lg leading-relaxed max-w-full md:max-w-[70%] ml-0 md:ml-auto">
-                <p className="m-0">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6', maxWidth: mobile ? '100%' : '70%', marginLeft: mobile ? '0' : 'auto' }}>
+                <p style={{ margin: 0 }}>
                   Pablo Gnecco is a Colombian-born experiential director and creative
                   technologist based in New York. He creates immersive installations for public
                   art, brand activations, and cultural institutions—working at the intersection
                   of motion, interaction, and physical computing.
                 </p>
-                <p className="m-0">
+                <p style={{ margin: 0 }}>
                   Clients include Google, Intel, Sony, and Michigan Central Station. An early
                   member of The New Museum&apos;s NEW INC and resident artist at Mana
                   Contemporary, Pablo founded Studio Studio and the 9to5.tv festival in
                   Atlanta.
                 </p>
-                <p className="m-0">
+                <p style={{ margin: 0 }}>
                   Currently developing permanent light installations and new media sculptures
                   while building Origen, a specialty coffee company connecting roasters with
                   Colombian farmers.
@@ -388,16 +435,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col px-5 py-10 md:px-10 md:py-[60px]">
+      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
             onClick={() => toggleSection('experience')}
             className="cursor-pointer py-8 flex items-center justify-between"
+            style={{ paddingTop: '32px', paddingBottom: '32px' }}
           >
-            <h2 className="text-2xl md:text-[32px] font-bold tracking-tight m-0">Experience</h2>
-            <span className="text-[32px] md:text-[40px] font-light leading-none">
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Experience</h2>
+            <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.experience ? '−' : '+'}
             </span>
           </div>
@@ -406,120 +454,201 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={experienceContentRef}
             style={{ height: 0, opacity: 0 }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5 md:gap-[120px] mt-10 pb-5">
-              <div className="hidden md:block">
-                <div className="w-2 h-2 bg-white rounded-full" />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
+              {!mobile && (
+                <div>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
+                </div>
+              )}
 
-              {/* Mobile view - list with strokes */}
-              <div className="block md:hidden max-w-full">
-                <div className="flex flex-col">
-                  <div className="py-5 border-b border-white/20">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Experiential Director</h3>
-                    <AnimatedLink href="https://chemistrycreative.com" target="_blank" rel="noopener noreferrer" className="text-base">
-                      Chemistry Creative Inc. ↗
-                    </AnimatedLink>
-                  </div>
-                  <div className="py-5 border-b border-white/20">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Founder</h3>
-                    <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="text-base">
-                      Studio–Studio ↗
-                    </AnimatedLink>
-                  </div>
-                  <div className="py-5 border-b border-white/20">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Creative Technologist</h3>
-                    <AnimatedLink href="https://invisiblenorth.com" target="_blank" rel="noopener noreferrer" className="text-base">
-                      Invisible North ↗
-                    </AnimatedLink>
-                  </div>
-                  <div className="py-5 border-b border-white/20">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Creative Technologist</h3>
-                    <AnimatedLink href="https://giantspoon.com" target="_blank" rel="noopener noreferrer" className="text-base">
-                      Giant Spoon ↗
-                    </AnimatedLink>
-                  </div>
-                  <div className="py-5 border-b border-white/20">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Motion Designer</h3>
-                    <AnimatedLink href="https://leaddog.com" target="_blank" rel="noopener noreferrer" className="text-base">
-                      Leaddog Marketing ↗
-                    </AnimatedLink>
-                  </div>
-                  <div className="py-5">
-                    <h3 className="text-lg font-bold mb-2 tracking-tight">Designer</h3>
-                    <AnimatedLink href="https://movl.com" target="_blank" rel="noopener noreferrer" className="text-base">
-                      MOVL ↗
-                    </AnimatedLink>
-                  </div>
-                </div>
-              </div>
+              {mobile ? (
+                // Mobile view - list with strokes
+                <div style={{ maxWidth: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Experiential Director</h3>
+                      <AnimatedLink
+                        href="https://chemistrycreative.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        Chemistry Creative Inc. ↗
+                      </AnimatedLink>
+                    </div>
 
-              {/* Desktop view - two columns with dates */}
-              <div className="hidden md:grid grid-cols-2 gap-x-[350px] max-w-[70%] ml-auto">
-                {/* Left Column */}
-                <div className="flex flex-col gap-16">
-                  <div>
-                    <div className="mb-3 text-base">• 2022-2025</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Experiential Director</h3>
-                    <AnimatedLink href="https://chemistrycreative.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      Chemistry Creative Inc. ↗
-                    </AnimatedLink>
-                  </div>
-                  <div>
-                    <div className="mb-3 text-base">• 2018-2019</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Creative Technologist</h3>
-                    <AnimatedLink href="https://invisiblenorth.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      Invisible North ↗
-                    </AnimatedLink>
-                  </div>
-                  <div>
-                    <div className="mb-3 text-base">• 2012-2013</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Motion Designer</h3>
-                    <AnimatedLink href="https://leaddog.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      Leaddog Marketing ↗
-                    </AnimatedLink>
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Founder</h3>
+                      <AnimatedLink
+                        href="https://studiostudio.nyc" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        Studio–Studio ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
+                      <AnimatedLink
+                        href="https://invisiblenorth.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        Invisible North ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
+                      <AnimatedLink
+                        href="https://giantspoon.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        Giant Spoon ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Motion Designer</h3>
+                      <AnimatedLink
+                        href="https://leaddog.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        Leaddog Marketing ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Designer</h3>
+                      <AnimatedLink
+                        href="https://movl.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '16px' }}
+                      >
+                        MOVL ↗
+                      </AnimatedLink>
+                    </div>
                   </div>
                 </div>
-                {/* Right Column */}
-                <div className="flex flex-col gap-16">
-                  <div>
-                    <div className="mb-3 text-base">• 2015-Present</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Founder</h3>
-                    <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      Studio–Studio ↗
-                    </AnimatedLink>
+              ) : (
+                // Desktop view - two columns with dates
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '350px', maxWidth: '70%', marginLeft: 'auto' }}>
+                  {/* Left Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2022-2025</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Experiential Director</h3>
+                      <AnimatedLink
+                        href="https://chemistrycreative.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        Chemistry Creative Inc. ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2018-2019</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
+                      <AnimatedLink
+                        href="https://invisiblenorth.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        Invisible North ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2012-2013</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Motion Designer</h3>
+                      <AnimatedLink
+                        href="https://leaddog.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        Leaddog Marketing ↗
+                      </AnimatedLink>
+                    </div>
                   </div>
-                  <div>
-                    <div className="mb-3 text-base">• 2017-2018</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Creative Technologist</h3>
-                    <AnimatedLink href="https://giantspoon.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      Giant Spoon ↗
-                    </AnimatedLink>
-                  </div>
-                  <div>
-                    <div className="mb-3 text-base">• 2010-2011</div>
-                    <h3 className="text-xl font-bold mb-2 tracking-tight">Designer</h3>
-                    <AnimatedLink href="https://movl.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-lg">
-                      MOVL ↗
-                    </AnimatedLink>
+
+                  {/* Right Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2015-Present</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Founder</h3>
+                      <AnimatedLink
+                        href="https://studiostudio.nyc" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        Studio–Studio ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2017-2018</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Creative Technologist</h3>
+                      <AnimatedLink
+                        href="https://giantspoon.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        Giant Spoon ↗
+                      </AnimatedLink>
+                    </div>
+
+                    <div>
+                      <div style={{ marginBottom: '12px', fontSize: '16px' }}>• 2010-2011</div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Designer</h3>
+                      <AnimatedLink
+                        href="https://movl.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: '18px' }}
+                      >
+                        MOVL ↗
+                      </AnimatedLink>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col px-5 py-10 md:px-10 md:py-[60px]">
+      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
             onClick={() => toggleSection('press')}
             className="cursor-pointer py-8 flex items-center justify-between"
+            style={{ paddingTop: '32px', paddingBottom: '32px' }}
           >
-            <h2 className="text-2xl md:text-[32px] font-bold tracking-tight m-0">Press</h2>
-            <span className="text-[32px] md:text-[40px] font-light leading-none">
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Press</h2>
+            <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.press ? '−' : '+'}
             </span>
           </div>
@@ -529,9 +658,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             style={{ height: 0, opacity: 0 }}
           >
             {pressHighlights.length > 0 && (
-              <div className="mt-10 pb-5">
+              <div style={{ marginTop: '40px', paddingBottom: '20px' }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-[17px]">
+                  <table className="w-full text-left border-collapse" style={{ fontSize: '17px' }}>
                     <tbody>
                       {pressHighlights.map((highlight) => {
                         const formattedDate = new Date(highlight.date).toLocaleDateString('en-US', {
@@ -545,7 +674,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                             key={highlight._id}
                             className="border-b border-white/10 hover:bg-white/5 transition-colors"
                           >
-                            <td className="py-5 pr-6">
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
                               <AnimatedLink
                                 href={highlight.url}
                                 target="_blank"
@@ -555,17 +684,19 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                                 {highlight.title}
                               </AnimatedLink>
                             </td>
-                            <td className="hidden md:table-cell py-5 pr-6">
-                              <AnimatedLink
-                                href={highlight.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="no-underline"
-                              >
-                                {formattedDate}
-                              </AnimatedLink>
-                            </td>
-                            <td className="py-5 pr-6">
+                            {!mobile && (
+                              <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
+                                <AnimatedLink
+                                  href={highlight.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="no-underline"
+                                >
+                                  {formattedDate}
+                                </AnimatedLink>
+                              </td>
+                            )}
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', paddingRight: '24px' }}>
                               <AnimatedLink
                                 href={highlight.url}
                                 target="_blank"
@@ -575,7 +706,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                                 {highlight.publication}
                               </AnimatedLink>
                             </td>
-                            <td className="py-5 text-right">
+                            <td style={{ paddingTop: '20px', paddingBottom: '20px', textAlign: 'right' }}>
                               <AnimatedLink
                                 href={highlight.url}
                                 target="_blank"
@@ -598,16 +729,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col px-5 py-10 md:px-10 md:py-[60px]">
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
             onClick={() => toggleSection('contact')}
             className="cursor-pointer py-8 flex items-center justify-between"
+            style={{ paddingTop: '32px', paddingBottom: '32px' }}
           >
-            <h2 className="text-2xl md:text-[32px] font-bold tracking-tight m-0">Contact</h2>
-            <span className="text-[32px] md:text-[40px] font-light leading-none">
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Contact</h2>
+            <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.contact ? '−' : '+'}
             </span>
           </div>
@@ -642,16 +774,18 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 opacity: 1 !important;
               }
             `}} />
-            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5 md:gap-[120px] mt-10 pb-5">
-              <div className="hidden md:block">
-                <div className="w-2 h-2 bg-white rounded-full" />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
+              {!mobile && (
+                <div>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
+                </div>
+              )}
 
-              <div className="max-w-full">
-                <div className="text-base md:text-lg leading-relaxed">
+              <div style={{ maxWidth: mobile ? '100%' : '100%', marginLeft: mobile ? '0' : '0' }}>
+                <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
                   
                   {/* Contact Form */}
-                  <form onSubmit={handleFormSubmit} className="flex flex-col gap-6 max-w-full md:max-w-[1000px] w-full">
+                  <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: mobile ? '100%' : '1000px', width: '100%' }}>
                       {/* Name Field */}
                       <div>
                         <input
@@ -766,17 +900,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col px-5 py-10 pb-20 md:px-10 md:py-[60px] md:pb-[120px]">
+      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px 80px 20px' : '60px 40px 120px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
-          <div className="pt-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 md:gap-0 text-sm opacity-70">
-            <div>© {currentYear} Pablo Gnecco</div>
-            <div className="flex gap-5 md:gap-[30px] items-center">
+          <div style={{ paddingTop: '40px', display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'center', gap: mobile ? '20px' : '0', fontSize: '14px', opacity: 0.7 }}>
+            <div suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
+            <div style={{ display: 'flex', gap: mobile ? '20px' : '30px', alignItems: 'center' }}>
               <AnimatedLink
                 href="https://instagram.com/yopablo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
                 <Instagram size={18} strokeWidth={1.5} />
                 <span>Instagram</span>
@@ -785,7 +919,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 href="https://x.com/yopablo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
                 <Twitter size={18} strokeWidth={1.5} />
                 <span>Twitter</span>
@@ -794,7 +928,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
                 <Linkedin size={18} strokeWidth={1.5} />
                 <span>LinkedIn</span>
@@ -812,7 +946,21 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Coming Soon Message */}
       {comingSoonMessage && (
         <div
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0020FF] text-white px-10 py-5 text-2xl md:text-[32px] font-bold z-[10000] pointer-events-none transition-opacity duration-300"
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: '#0020FF',
+            color: '#FFFFFF',
+            padding: '20px 40px',
+            fontSize: mobile ? '24px' : '32px',
+            fontWeight: '700',
+            zIndex: 10000,
+            pointerEvents: 'none',
+            opacity: comingSoonMessage ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
         >
           {comingSoonMessage}
         </div>
