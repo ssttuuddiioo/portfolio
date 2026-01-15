@@ -3,47 +3,33 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import Image from 'next/image'
-import { Instagram } from 'lucide-react'
+import { Instagram, Twitter, Linkedin } from 'lucide-react'
 import { AnimatedLink } from './AnimatedLink'
 import { ImageRevealShader } from './ImageRevealShader'
 import { PressHighlight } from '@/types/pressHighlight'
-import dynamic from 'next/dynamic'
-
-// Dynamically import the 3D gallery to avoid SSR issues
-const InfiniteGallery = dynamic(() => import('./ui/3d-gallery-photography'), {
-  ssr: false,
-})
+import { Project } from '@/types/project'
 
 gsap.registerPlugin(ScrollToPlugin)
 
 interface LandingPageProps {
   pressHighlights: PressHighlight[]
+  projects: Project[]
+  workIntroText?: string
 }
 
-export function LandingPage({ pressHighlights }: LandingPageProps) {
+export function LandingPage({ pressHighlights, projects, workIntroText }: LandingPageProps) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     about: false,
     experience: false,
     press: false,
     contact: false,
   })
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isPabloHovered, setIsPabloHovered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [isWorkHovered, setIsWorkHovered] = useState(false)
-  const [hoveredProject, setHoveredProject] = useState<{ title?: string; client?: string } | null>(null)
-
-  // Work gallery images with project info
-  const workImages = [
-    { src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&q=80', alt: 'Digital Installation', title: 'Digital Installation', client: 'Google Arts', url: '#project-1' },
-    { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80', alt: 'Interactive Sculpture', title: 'Interactive Sculpture', client: 'Intel Labs', url: '#project-2' },
-    { src: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&q=80', alt: 'Light Projection', title: 'Light Projection', client: 'Michigan Central', url: '#project-3' },
-    { src: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80', alt: 'Data Visualization', title: 'Data Visualization', client: 'Sony Music', url: '#project-4' },
-    { src: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&q=80', alt: 'Immersive Experience', title: 'Immersive Experience', client: 'The New Museum', url: '#project-5' },
-    { src: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80', alt: 'Generative Art', title: 'Generative Art', client: 'Mana Contemporary', url: '#project-6' },
-    { src: 'https://images.unsplash.com/photo-1639322537228-f710d846310a?w=1200&q=80', alt: 'Spatial Computing', title: 'Spatial Computing', client: 'Studio Studio', url: '#project-7' },
-    { src: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1200&q=80', alt: 'Media Architecture', title: 'Media Architecture', client: 'Chemistry Creative', url: '#project-8' },
-  ]
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' })
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
 
   const aboutContentRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
@@ -57,21 +43,80 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
 
   const scrollToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    
-    // Scroll to the contact section with ease in/out
-    if (contactSectionRef.current) {
-      const targetPosition = contactSectionRef.current.offsetTop
+    if (!openSections.contact) {
+      setOpenSections(prev => ({ ...prev, contact: true }))
+    } else {
+      // If already open, just scroll to it
       gsap.to(window, {
-        scrollTo: { y: targetPosition, autoKill: true },
-        duration: 1.2,
-        ease: 'power2.inOut',
-        onUpdate: function() {
-          // Open the section when we're about 70% through the scroll animation
-          if (this.progress() >= 0.7 && !openSections.contact) {
-            setOpenSections(prev => ({ ...prev, contact: true }))
-          }
-        }
+        scrollTo: { y: "max", autoKill: true },
+        duration: 1.0,
+        ease: 'power2.inOut'
       })
+    }
+  }
+
+  const showComingSoon = (e: React.MouseEvent<HTMLAnchorElement>, message: string) => {
+    e.preventDefault()
+    setComingSoonMessage(message)
+    setTimeout(() => setComingSoonMessage(null), 2000)
+  }
+
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(selectedCategory === category ? null : category)
+  }
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    // Basic validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setFormStatus('error')
+      return
+    }
+
+    setFormStatus('submitting')
+
+    try {
+      const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT
+      
+      if (!formspreeEndpoint) {
+        console.error('Formspree endpoint not configured')
+        setFormStatus('error')
+        return
+      }
+
+      const response = await fetch(formspreeEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+        }),
+      })
+
+      if (response.ok) {
+        setFormStatus('success')
+        setFormData({ name: '', email: '', message: '' })
+        // Reset success message after 5 seconds
+        setTimeout(() => setFormStatus('idle'), 5000)
+      } else {
+        setFormStatus('error')
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setFormStatus('error')
+    }
+  }
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    // Reset error status when user starts typing
+    if (formStatus === 'error') {
+      setFormStatus('idle')
     }
   }
 
@@ -85,38 +130,6 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // Handle ESC key to close gallery
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isWorkHovered) {
-        setIsWorkHovered(false)
-        setHoveredProject(null)
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isWorkHovered])
-
-  const handleImageHover = (hovered: boolean, data?: { title?: string; client?: string }) => {
-    if (hovered && data) {
-      setHoveredProject(data)
-    } else {
-      setHoveredProject(null)
-    }
-  }
-
-  const handleImageClick = (url?: string) => {
-    if (url) {
-      window.location.href = url
-    }
-  }
-
-  const handleGalleryClose = () => {
-    setIsWorkHovered(false)
-    setHoveredProject(null)
-  }
 
   useEffect(() => {
     const contentRef = aboutContentRef.current
@@ -208,9 +221,22 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             ease: 'power2.out',
             onComplete: () => {
               contentRef.style.overflow = 'visible'
+              // Ensure we are really at the bottom after expansion finishes
+              gsap.to(window, {
+                scrollTo: { y: document.body.scrollHeight, autoKill: false },
+                duration: 0.5,
+                ease: 'power2.out'
+              })
             }
           }
         )
+        
+        // Start scrolling immediately as it opens
+        gsap.to(window, {
+          scrollTo: { y: document.body.scrollHeight + 1000, autoKill: false }, // Overshoot to ensure max
+          duration: 1.0,
+          ease: 'power2.inOut'
+        })
       } else {
         contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
@@ -266,11 +292,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             }}>
               <AnimatedLink 
                 href="#work"
-                onMouseEnter={() => setIsWorkHovered(true)}
-                onMouseLeave={() => {
-                  // Only close if gallery isn't already open (prevents closing when moving between elements)
-                  if (!isWorkHovered) return
-                }}
+                onClick={(e) => showComingSoon(e, 'Coming Soon')}
                 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
@@ -286,6 +308,7 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
               </AnimatedLink>
               <AnimatedLink 
                 href="#experiments"
+                onClick={(e) => showComingSoon(e, 'Coming Soon')}
                 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: isMobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
@@ -293,15 +316,33 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
               </AnimatedLink>
             </div>
             
-            {/* Instagram Icon - Right aligned */}
-            <AnimatedLink 
-              href="https://instagram.com/yopablo"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
-            >
-              <Instagram size={isMobile ? 32 : 40} strokeWidth={1.5} />
-            </AnimatedLink>
+            {/* Social Icons - Right aligned */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: isMobile ? '16px' : '20px' }}>
+              <AnimatedLink 
+                href="https://instagram.com/yopablo"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
+              >
+                <Instagram size={isMobile ? 32 : 40} strokeWidth={1.5} />
+              </AnimatedLink>
+              <AnimatedLink 
+                href="https://x.com/yopablo"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
+              >
+                <Twitter size={isMobile ? 32 : 40} strokeWidth={1.5} />
+              </AnimatedLink>
+              <AnimatedLink 
+                href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
+              >
+                <Linkedin size={isMobile ? 32 : 40} strokeWidth={1.5} />
+              </AnimatedLink>
+            </div>
           </div>
         </div>
         
@@ -326,79 +367,10 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             />
           </div>
         )}
-        
-        {/* 3D Work Gallery - Overlay layer on View Work hover (hidden on mobile) */}
-        {!isMobile && isWorkHovered && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 10000,
-              pointerEvents: 'auto',
-            }}
-            onClick={handleGalleryClose}
-          >
-            <InfiniteGallery
-              images={workImages}
-              speed={1.2}
-              visibleCount={12}
-              className="h-screen w-full"
-              fadeSettings={{
-                fadeIn: { start: 0.05, end: 0.25 },
-                fadeOut: { start: 0.4, end: 0.43 },
-              }}
-              blurSettings={{
-                blurIn: { start: 0.0, end: 0.1 },
-                blurOut: { start: 0.4, end: 0.43 },
-                maxBlur: 8.0,
-              }}
-              onImageHover={handleImageHover}
-              onImageClick={handleImageClick}
-            />
-            {/* Project info on hover */}
-            {hoveredProject && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '40px',
-                  left: '40px',
-                  color: 'white',
-                  fontSize: '16px',
-                  fontFamily: 'monospace',
-                  textTransform: 'uppercase',
-                  pointerEvents: 'none',
-                  zIndex: 10001,
-                }}
-              >
-                <p style={{ margin: 0, marginBottom: '4px', fontWeight: 'bold' }}>{hoveredProject.title}</p>
-                <p style={{ margin: 0, opacity: 0.7 }}>{hoveredProject.client}</p>
-              </div>
-            )}
-            {/* Close instruction */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                color: 'white',
-                fontSize: '14px',
-                fontFamily: 'monospace',
-                textTransform: 'uppercase',
-                pointerEvents: 'none',
-                textAlign: 'center',
-                zIndex: 10001,
-              }}
-            >
-              <p style={{ margin: 0, marginBottom: '4px' }}>Use mouse wheel or arrow keys to navigate • Click images to view project</p>
-              <p style={{ margin: 0, opacity: 0.6 }}>Click background to close • ESC to exit</p>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Work Section - Only visible when opened */}
+      {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
       <div className="flex flex-col" style={{ padding: isMobile ? '40px 20px' : '60px 40px 60px 40px' }}>
@@ -765,6 +737,32 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
             ref={contactContentRef}
             style={{ height: 0, opacity: 0 }}
           >
+            <style dangerouslySetInnerHTML={{ __html: `
+              input[type="text"]::placeholder,
+              input[type="email"]::placeholder,
+              textarea::placeholder {
+                color: rgba(255, 255, 255, 1) !important;
+                opacity: 1 !important;
+              }
+              input[type="text"]::-webkit-input-placeholder,
+              input[type="email"]::-webkit-input-placeholder,
+              textarea::-webkit-input-placeholder {
+                color: rgba(255, 255, 255, 1) !important;
+                opacity: 1 !important;
+              }
+              input[type="text"]::-moz-placeholder,
+              input[type="email"]::-moz-placeholder,
+              textarea::-moz-placeholder {
+                color: rgba(255, 255, 255, 1) !important;
+                opacity: 1 !important;
+              }
+              input[type="text"]:-ms-input-placeholder,
+              input[type="email"]:-ms-input-placeholder,
+              textarea:-ms-input-placeholder {
+                color: rgba(255, 255, 255, 1) !important;
+                opacity: 1 !important;
+              }
+            `}} />
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: isMobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
               {!isMobile && (
                 <div>
@@ -772,78 +770,117 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
                 </div>
               )}
 
-              <div style={{ maxWidth: isMobile ? '100%' : '70%', marginLeft: isMobile ? '0' : 'auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '40px' : '350px', fontSize: isMobile ? '16px' : '18px', lineHeight: '1.6' }}>
+              <div style={{ maxWidth: isMobile ? '100%' : '100%', marginLeft: isMobile ? '0' : '0' }}>
+                <div style={{ fontSize: isMobile ? '16px' : '18px', lineHeight: '1.6' }}>
                   
-                  {/* Left Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                    {/* Email - Studio Studio */}
-                    <div>
-                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>E-MAIL</div>
-                      <AnimatedLink
-                        href="mailto:hello@studiostudio.nyc"
-                        style={{ fontSize: '18px' }}
-                      >
-                        hello@studiostudio.nyc ↗
-                      </AnimatedLink>
-                    </div>
+                  {/* Contact Form */}
+                  <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: isMobile ? '100%' : '1000px', width: '100%' }}>
+                      {/* Name Field */}
+                      <div>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleFormChange}
+                          placeholder="Name"
+                          required
+                          disabled={formStatus === 'submitting'}
+                          style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                            color: '#FFFFFF',
+                            fontSize: '18px',
+                            fontFamily: 'inherit',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
 
-                    {/* LinkedIn */}
-                    <div>
-                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>LINKEDIN</div>
-                      <AnimatedLink
-                        href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '18px' }}
-                      >
-                        pablo-gnecco ↗
-                      </AnimatedLink>
-                    </div>
+                      {/* Email Field */}
+                      <div>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleFormChange}
+                          placeholder="Email"
+                          required
+                          disabled={formStatus === 'submitting'}
+                          style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                            color: '#FFFFFF',
+                            fontSize: '18px',
+                            fontFamily: 'inherit',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
 
-                    {/* Instagram */}
-                    <div>
-                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>INSTAGRAM</div>
-                      <AnimatedLink
-                        href="https://instagram.com/yopablo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '18px' }}
-                      >
-                        @yopablo ↗
-                      </AnimatedLink>
-                    </div>
-                  </div>
+                      {/* Message Field */}
+                      <div>
+                        <textarea
+                          name="message"
+                          value={formData.message}
+                          onChange={handleFormChange}
+                          placeholder="Message"
+                          required
+                          rows={4}
+                          disabled={formStatus === 'submitting'}
+                          style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                            color: '#FFFFFF',
+                            fontSize: '18px',
+                            fontFamily: 'inherit',
+                            outline: 'none',
+                            resize: 'vertical',
+                            minHeight: '80px',
+                          }}
+                        />
+                      </div>
 
-                  {/* Right Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                    {/* X.com */}
-                    <div>
-                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>X.COM</div>
-                      <AnimatedLink
-                        href="https://x.com/yopablo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '18px' }}
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        disabled={formStatus === 'submitting'}
+                        style={{
+                          alignSelf: 'flex-start',
+                          padding: '12px 0',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                          color: '#FFFFFF',
+                          fontSize: '18px',
+                          fontFamily: 'inherit',
+                          cursor: formStatus === 'submitting' ? 'not-allowed' : 'pointer',
+                          opacity: formStatus === 'submitting' ? 0.5 : 1,
+                        }}
                       >
-                        @yopablo ↗
-                      </AnimatedLink>
-                    </div>
+                        {formStatus === 'submitting' ? 'Sending...' : formStatus === 'success' ? 'Sent ✓' : 'Send'}
+                      </button>
 
-                    {/* Vimeo */}
-                    <div>
-                      <div style={{ opacity: 0.7, marginBottom: '8px' }}>VIMEO</div>
-                      <AnimatedLink
-                        href="https://vimeo.com/yopablo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '18px' }}
-                      >
-                        yopablo ↗
-                      </AnimatedLink>
-                    </div>
-                  </div>
-
+                      {/* Status Messages */}
+                      {formStatus === 'error' && (
+                        <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
+                          Something went wrong. Please try again.
+                        </div>
+                      )}
+                      {formStatus === 'success' && (
+                        <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
+                          Message sent successfully!
+                        </div>
+                      )}
+                    </form>
                 </div>
               </div>
             </div>
@@ -857,13 +894,33 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
           <div className="border-t border-white" />
           <div style={{ paddingTop: '40px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0', fontSize: '14px', opacity: 0.7 }}>
             <div>© {new Date().getFullYear()} Pablo Gnecco</div>
-            <div style={{ display: 'flex', gap: isMobile ? '20px' : '30px' }}>
+            <div style={{ display: 'flex', gap: isMobile ? '20px' : '30px', alignItems: 'center' }}>
               <AnimatedLink
                 href="https://instagram.com/yopablo"
                 target="_blank"
                 rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
-                Instagram
+                <Instagram size={18} strokeWidth={1.5} />
+                <span>Instagram</span>
+              </AnimatedLink>
+              <AnimatedLink
+                href="https://x.com/yopablo"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Twitter size={18} strokeWidth={1.5} />
+                <span>Twitter</span>
+              </AnimatedLink>
+              <AnimatedLink
+                href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Linkedin size={18} strokeWidth={1.5} />
+                <span>LinkedIn</span>
               </AnimatedLink>
               <AnimatedLink
                 href="mailto:hello@pablognecco.com"
@@ -874,6 +931,29 @@ export function LandingPage({ pressHighlights }: LandingPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Coming Soon Message */}
+      {comingSoonMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: '#0020FF',
+            color: '#FFFFFF',
+            padding: '20px 40px',
+            fontSize: isMobile ? '24px' : '32px',
+            fontWeight: '700',
+            zIndex: 10000,
+            pointerEvents: 'none',
+            opacity: comingSoonMessage ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          {comingSoonMessage}
+        </div>
+      )}
 
     </div>
   )

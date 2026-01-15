@@ -28,6 +28,7 @@ export interface Project {
   githubUrl?: string
   featured?: boolean
   order?: number
+  category?: string[]
 }
 
 

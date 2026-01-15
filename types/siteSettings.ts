@@ -10,5 +10,6 @@ export interface SiteSettings {
     linkedin?: string
     github?: string
   }
+  workIntroText?: string
 }
 

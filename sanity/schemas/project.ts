@@ -85,6 +85,29 @@ export default {
       type: 'number',
       description: 'Order in which projects are displayed',
     },
+    {
+      name: 'category',
+      title: 'Categories',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Categories for filtering projects (e.g., Art, Commercial, Installation, etc.)',
+      options: {
+        list: [
+          { title: 'Art', value: 'Art' },
+          { title: 'Commercial', value: 'Commercial' },
+          { title: 'Installation', value: 'Installation' },
+          { title: 'Tools', value: 'Tools' },
+          { title: 'Branding', value: 'Branding' },
+          { title: 'Vibe Coded', value: 'Vibe Coded' },
+          { title: 'Photography', value: 'Photography' },
+          { title: 'Design', value: 'Design' },
+          { title: 'Editing', value: 'Editing' },
+          { title: 'AR/XR', value: 'AR/XR' },
+          { title: 'Motion Graphics', value: 'Motion Graphics' },
+          { title: 'Neat Ideas', value: 'Neat Ideas' },
+        ],
+      },
+    },
   ],
   orderings: [
     {

@@ -51,6 +51,14 @@ export default {
         },
       ],
     },
+    {
+      name: 'workIntroText',
+      title: 'Work Section Intro Text',
+      type: 'text',
+      description: 'The paragraph text displayed at the top left of the work section',
+      rows: 4,
+      initialValue: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum convallis, dolor sed consectetur gravida. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.',
+    },
   ],
 }
 
