@@ -27,6 +27,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isPabloHovered, setIsPabloHovered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
@@ -80,7 +81,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT
       
       if (!formspreeEndpoint) {
-        console.error('Formspree endpoint not configured')
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Formspree endpoint not configured')
+        }
         setFormStatus('error')
         return
       }
@@ -121,6 +124,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   }
 
   useEffect(() => {
+    setIsMounted(true)
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 900)
     }
@@ -244,8 +248,11 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     }
   }, [openSections.contact])
 
+  // Use a constant year to avoid hydration issues
+  const currentYear = 2025
+
   return (
-    <div className="bg-[#0020FF] text-white">
+    <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
       {/* Page 1 - Intro */}
       <div className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
         <div className="flex-1 flex flex-col justify-between">
@@ -893,7 +900,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         <div className="w-full">
           <div className="border-t border-white" />
           <div style={{ paddingTop: '40px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0', fontSize: '14px', opacity: 0.7 }}>
-            <div>© {new Date().getFullYear()} Pablo Gnecco</div>
+            <div suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
             <div style={{ display: 'flex', gap: isMobile ? '20px' : '30px', alignItems: 'center' }}>
               <AnimatedLink
                 href="https://instagram.com/yopablo"
