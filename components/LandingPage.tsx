@@ -27,6 +27,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isPabloHovered, setIsPabloHovered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isMedium, setIsMedium] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
@@ -141,14 +142,16 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   useEffect(() => {
     setHasMounted(true)
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 900)
+    const checkBreakpoints = () => {
+      const width = window.innerWidth
+      setIsMobile(width < 900)
+      setIsMedium(width >= 900 && width < 1500)
     }
     
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
+    checkBreakpoints()
+    window.addEventListener('resize', checkBreakpoints)
     
-    return () => window.removeEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkBreakpoints)
   }, [])
 
   useEffect(() => {
@@ -269,7 +272,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   
   // Use mobile state only after mount to prevent hydration mismatch
   // Server always renders desktop mode, client updates after mount
+  // Use breakpoint states only after mount to prevent hydration mismatch
+  // Server always renders desktop mode, client updates after mount
   const mobile = hasMounted ? isMobile : false
+  const medium = hasMounted ? isMedium : false
 
   return (
     <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
@@ -278,7 +284,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         <div className="flex-1 flex flex-col justify-between">
           {/* Top Section - Large Heading */}
           <div style={{ paddingTop: mobile ? '20px' : '50px', paddingLeft: mobile ? '20px' : '40px', flex: mobile ? '0 0 auto' : '1' }}>
-            <h1 style={{ fontSize: mobile ? '2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
+            <h1 style={{ fontSize: mobile ? '2rem' : medium ? '3.2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
               Hi. I&apos;m{' '}
               <AnimatedLink
                 href="https://instagram.com/yopablo"
@@ -320,7 +326,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               <AnimatedLink 
                 href="#work"
                 onClick={(e) => showComingSoon(e, 'Coming Soon')}
-                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
                 View Work   
@@ -328,7 +334,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               <AnimatedLink 
                 href="#about"
                 onClick={scrollToAbout}
-                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
                 About
@@ -336,7 +342,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               <AnimatedLink 
                 href="#contact"
                 onClick={scrollToContact}
-                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
                 Contact
@@ -344,7 +350,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               <AnimatedLink 
                 href="#experiments"
                 onClick={(e) => showComingSoon(e, 'Coming Soon')}
-                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
                 Experiments
