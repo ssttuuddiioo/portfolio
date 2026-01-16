@@ -32,6 +32,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
+  const [imageTop, setImageTop] = useState('50%')
 
   const aboutSectionRef = useRef<HTMLDivElement>(null)
   const aboutContentRef = useRef<HTMLDivElement>(null)
@@ -39,6 +40,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
   const contactSectionRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const navLinksRef = useRef<HTMLDivElement>(null)
+  const heroContainerRef = useRef<HTMLDivElement>(null)
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -153,6 +157,29 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     
     return () => window.removeEventListener('resize', checkBreakpoints)
   }, [])
+
+  // Calculate image position between title and nav links
+  useEffect(() => {
+    const calculateImagePosition = () => {
+      if (titleRef.current && navLinksRef.current && heroContainerRef.current) {
+        const containerRect = heroContainerRef.current.getBoundingClientRect()
+        const titleRect = titleRef.current.getBoundingClientRect()
+        const navRect = navLinksRef.current.getBoundingClientRect()
+        
+        // Calculate positions relative to the container
+        const titleBottom = titleRect.bottom - containerRect.top
+        const navTop = navRect.top - containerRect.top
+        const centerY = titleBottom + (navTop - titleBottom) / 2
+        setImageTop(`${centerY}px`)
+      }
+    }
+
+    if (hasMounted) {
+      calculateImagePosition()
+      window.addEventListener('resize', calculateImagePosition)
+      return () => window.removeEventListener('resize', calculateImagePosition)
+    }
+  }, [hasMounted])
 
   useEffect(() => {
     const contentRef = aboutContentRef.current
@@ -280,11 +307,11 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
       {/* Page 1 - Intro */}
-      <div className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
+      <div ref={heroContainerRef} className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
         <div className="flex-1 flex flex-col justify-between">
           {/* Top Section - Large Heading */}
           <div style={{ paddingTop: mobile ? '20px' : '50px', paddingLeft: mobile ? '20px' : '40px', flex: mobile ? '0 0 auto' : '1' }}>
-            <h1 style={{ fontSize: mobile ? '2rem' : medium ? '3.2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
+            <h1 ref={titleRef} style={{ fontSize: mobile ? '2rem' : medium ? '3.2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
               Hi. I&apos;m{' '}
               <AnimatedLink
                 href="https://instagram.com/yopablo"
@@ -306,7 +333,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           </div>
           
           {/* Navigation Links - Bottom on mobile, top on desktop */}
-          <div style={{ 
+          <div ref={navLinksRef} style={{ 
             marginTop: mobile ? 'auto' : '80px',
             paddingLeft: mobile ? '20px' : '40px',
             paddingRight: mobile ? '20px' : '40px',
@@ -392,8 +419,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div
             style={{
               position: 'absolute',
-              bottom: '40px',
-              right: '90px',
+              top: imageTop,
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
               width: '350px',
               height: '480px',
               zIndex: 9999,
