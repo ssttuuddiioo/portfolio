@@ -32,6 +32,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
 
+  const aboutSectionRef = useRef<HTMLDivElement>(null)
   const aboutContentRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
   const pressContentRef = useRef<HTMLDivElement>(null)
@@ -40,6 +41,21 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const scrollToAbout = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    if (!openSections.about) {
+      setOpenSections(prev => ({ ...prev, about: true }))
+    }
+    // Scroll to About section
+    if (aboutSectionRef.current) {
+      gsap.to(window, {
+        scrollTo: { y: aboutSectionRef.current, offsetY: 50, autoKill: true },
+        duration: 1.0,
+        ease: 'power2.inOut'
+      })
+    }
   }
 
   const scrollToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -310,6 +326,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 View Work   
               </AnimatedLink>
               <AnimatedLink 
+                href="#about"
+                onClick={scrollToAbout}
+                style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
+                className="font-bold underline cursor-pointer"
+              >
+                About
+              </AnimatedLink>
+              <AnimatedLink 
                 href="#contact"
                 onClick={scrollToContact}
                 style={{ fontSize: mobile ? '1.8rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
@@ -384,7 +408,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
-      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
+      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
