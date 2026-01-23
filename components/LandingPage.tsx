@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { Instagram, Twitter, Linkedin } from 'lucide-react'
+import { Instagram, Twitter, Linkedin, Menu, ArrowUp, Mail, X } from 'lucide-react'
+import Image from 'next/image'
 import { AnimatedLink } from './AnimatedLink'
 import { ImageRevealShader } from './ImageRevealShader'
 import { PressHighlight } from '@/types/pressHighlight'
 import { Project } from '@/types/project'
+import { urlFor } from '@/sanity/lib/image'
 
 gsap.registerPlugin(ScrollToPlugin)
 
@@ -32,20 +34,57 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
+  const [isScrolledDown, setIsScrolledDown] = useState(false)
   const [imageTop, setImageTop] = useState('50%')
+  const [isWorkOpen, setIsWorkOpen] = useState(false)
 
   const aboutSectionRef = useRef<HTMLDivElement>(null)
   const aboutContentRef = useRef<HTMLDivElement>(null)
+  const experienceSectionRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
+  const pressSectionRef = useRef<HTMLDivElement>(null)
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
   const contactSectionRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const navLinksRef = useRef<HTMLDivElement>(null)
   const heroContainerRef = useRef<HTMLDivElement>(null)
+  const workPanelRef = useRef<HTMLDivElement>(null)
 
-  const toggleSection = (section: string) => {
+  const categories = [
+    'Art',
+    'Commercial',
+    'Installation',
+    'Tools',
+    'Branding',
+    'Vibe Coded',
+    'Photography',
+    'Design',
+    'Editing',
+    'AR/XR',
+    'Motion Graphics',
+    'Neat Ideas',
+  ]
+
+  const filteredProjects = selectedCategory
+    ? projects.filter((project) => project.category?.includes(selectedCategory))
+    : projects
+
+  const toggleAndScrollToSection = (section: string, sectionRef: React.RefObject<HTMLDivElement | null>) => {
+    const isCurrentlyOpen = openSections[section]
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+    
+    // Only scroll if we're opening the section
+    // Scroll starts immediately to run in parallel with expansion animation
+    if (!isCurrentlyOpen && sectionRef.current) {
+      // Calculate the exact scroll position to place section at top of viewport
+      const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY
+      gsap.to(window, {
+        scrollTo: { y: sectionTop, autoKill: false },
+        duration: 0.8,
+        ease: 'power2.inOut'
+      })
+    }
   }
 
   const scrollToAbout = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -53,10 +92,11 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     if (!openSections.about) {
       setOpenSections(prev => ({ ...prev, about: true }))
     }
-    // Scroll to About section
+    // Scroll to About section with header-like spacing
+    // Position nav bar at top as header, with equal space above/below the divider line
     if (aboutSectionRef.current) {
       gsap.to(window, {
-        scrollTo: { y: aboutSectionRef.current, offsetY: 50, autoKill: true },
+        scrollTo: { y: aboutSectionRef.current, offsetY: 160, autoKill: true },
         duration: 1.0,
         ease: 'power2.inOut'
       })
@@ -156,6 +196,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     window.addEventListener('resize', checkBreakpoints)
     
     return () => window.removeEventListener('resize', checkBreakpoints)
+  }, [])
+
+  // Track scroll position for hamburger/arrow toggle
+  useEffect(() => {
+    const handleScroll = () => {
+      // Consider "scrolled down" if past 100px
+      setIsScrolledDown(window.scrollY > 100)
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   // Calculate image position between title and nav links
@@ -294,6 +345,34 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     }
   }, [openSections.contact])
 
+  // Work panel slide animation and scroll lock
+  useEffect(() => {
+    if (workPanelRef.current) {
+      if (isWorkOpen) {
+        // Lock body scroll
+        document.body.style.overflow = 'hidden'
+        gsap.to(workPanelRef.current, {
+          x: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+        })
+      } else {
+        // Unlock body scroll
+        document.body.style.overflow = ''
+        gsap.to(workPanelRef.current, {
+          x: '100%',
+          duration: 0.6,
+          ease: 'power3.in',
+        })
+      }
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isWorkOpen])
+
   // Use a constant year to avoid hydration issues
   const currentYear = 2025
   
@@ -307,17 +386,16 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
       {/* Page 1 - Intro */}
-      <div ref={heroContainerRef} className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: 'calc(100vh - 100px)', position: 'relative' }}>
+      <div ref={heroContainerRef} className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: '100vh', minHeight: '100vh', position: 'relative' }}>
         <div className="flex-1 flex flex-col justify-between">
           {/* Top Section - Large Heading */}
           <div style={{ paddingTop: mobile ? '20px' : '50px', paddingLeft: mobile ? '20px' : '40px', flex: mobile ? '0 0 auto' : '1' }}>
             <h1 ref={titleRef} style={{ fontSize: mobile ? '2rem' : medium ? '3.2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
               Hi. I&apos;m{' '}
               <AnimatedLink
-                href="https://instagram.com/yopablo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
+                href="#about"
+                onClick={scrollToAbout}
+                className="underline cursor-pointer"
                 style={{ color: '#FFFFFF !important', textDecorationColor: 'white' }}
                 onMouseEnter={() => setIsPabloHovered(true)}
                 onMouseLeave={() => setIsPabloHovered(false)}
@@ -337,12 +415,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             marginTop: mobile ? 'auto' : '80px',
             paddingLeft: mobile ? '20px' : '40px',
             paddingRight: mobile ? '20px' : '40px',
-            paddingBottom: mobile ? '40px' : '0',
+            paddingBottom: mobile ? '40px' : '60px',
             display: 'flex', 
             flexDirection: mobile ? 'column' : 'row',
             alignItems: mobile ? 'flex-start' : 'center',
             justifyContent: 'space-between',
             gap: mobile ? '20px' : '0',
+            position: 'relative',
+            zIndex: 10000,
           }}>
             <div style={{ 
               display: 'flex', 
@@ -352,7 +432,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             }}>
               <AnimatedLink 
                 href="#work"
-                onClick={(e) => showComingSoon(e, 'Coming Soon')}
+                onClick={(e) => {
+                  e.preventDefault()
+                  setIsWorkOpen(true)
+                }}
                 style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
@@ -364,7 +447,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
                 className="font-bold underline cursor-pointer"
               >
-                About
+                Bio
               </AnimatedLink>
               <AnimatedLink 
                 href="#contact"
@@ -384,33 +467,33 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               </AnimatedLink>
             </div>
             
-            {/* Social Icons - Right aligned */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: mobile ? '16px' : '20px' }}>
-              <AnimatedLink 
-                href="https://instagram.com/yopablo"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
-              >
-                <Instagram size={mobile ? 32 : 40} strokeWidth={1.5} />
-              </AnimatedLink>
-              <AnimatedLink 
-                href="https://x.com/yopablo"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
-              >
-                <Twitter size={mobile ? 32 : 40} strokeWidth={1.5} />
-              </AnimatedLink>
-              <AnimatedLink 
-                href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', color: '#FFFFFF' }}
-              >
-                <Linkedin size={mobile ? 32 : 40} strokeWidth={1.5} />
-              </AnimatedLink>
-            </div>
+            {/* Hamburger/Arrow Toggle - Scrolls to footer or back to top */}
+            <button
+              onClick={() => {
+                if (isScrolledDown) {
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                } else {
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+                }
+              }}
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                color: '#FFFFFF',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'transform 0.3s ease'
+              }}
+              aria-label={isScrolledDown ? "Scroll to top" : "Scroll to footer"}
+            >
+              {isScrolledDown ? (
+                <ArrowUp size={mobile ? 32 : 40} strokeWidth={1.5} />
+              ) : (
+                <Menu size={mobile ? 32 : 40} strokeWidth={1.5} />
+              )}
+            </button>
           </div>
         </div>
         
@@ -422,17 +505,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               top: imageTop,
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '350px',
-              height: '480px',
+              width: '700px',
+              height: '960px',
               zIndex: 9999,
               pointerEvents: 'none',
             }}
           >
             <ImageRevealShader
-              imageUrl="/pablo-portrait.jpg"
+              imageUrl="/pablo.png"
               isVisible={isPabloHovered}
-              width={350}
-              height={480}
+              width={1920}
+              height={1080}
             />
           </div>
         )}
@@ -442,16 +525,16 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
-      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
+      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
-            onClick={() => toggleSection('about')}
+            onClick={() => toggleAndScrollToSection('about', aboutSectionRef)}
             className="cursor-pointer py-8 flex items-center justify-between"
-            style={{ paddingTop: '32px', paddingBottom: '32px' }}
+            style={{ paddingTop: '24px', paddingBottom: '24px' }}
           >
-            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>About</h2>
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Bio</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.about ? '−' : '+'}
             </span>
@@ -461,14 +544,16 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={aboutContentRef}
             style={{ height: 0, opacity: 0 }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
+              {/* Left Column - Bullet point on desktop, hidden on mobile */}
               {!mobile && (
                 <div>
                   <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
                 </div>
               )}
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6', maxWidth: mobile ? '100%' : '70%', marginLeft: mobile ? '0' : 'auto' }}>
+              {/* Right Column - Bio content */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
                 <p style={{ margin: 0 }}>
                   Pablo Gnecco is a Colombian-born experiential director and creative
                   technologist based in New York. He creates immersive installations for public
@@ -493,14 +578,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Experience Section */}
-      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
+      <div ref={experienceSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
-            onClick={() => toggleSection('experience')}
+            onClick={() => toggleAndScrollToSection('experience', experienceSectionRef)}
             className="cursor-pointer py-8 flex items-center justify-between"
-            style={{ paddingTop: '32px', paddingBottom: '32px' }}
+            style={{ paddingTop: '24px', paddingBottom: '24px' }}
           >
             <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Experience</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
@@ -512,16 +597,18 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={experienceContentRef}
             style={{ height: 0, opacity: 0 }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
+              {/* Left Column - Bullet point on desktop, hidden on mobile */}
               {!mobile && (
                 <div>
                   <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
                 </div>
               )}
 
+              {/* Right Column - Experience content */}
               {mobile ? (
                 // Mobile view - list with strokes
-                <div style={{ maxWidth: '100%' }}>
+                <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ paddingTop: '20px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
                       <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.01em' }}>Experiential Director</h3>
@@ -598,7 +685,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 </div>
               ) : (
                 // Desktop view - two columns with dates
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '350px', maxWidth: '70%', marginLeft: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px' }}>
                   {/* Left Column */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
                     <div>
@@ -696,14 +783,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Press Section */}
-      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
+      <div ref={pressSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
-            onClick={() => toggleSection('press')}
+            onClick={() => toggleAndScrollToSection('press', pressSectionRef)}
             className="cursor-pointer py-8 flex items-center justify-between"
-            style={{ paddingTop: '32px', paddingBottom: '32px' }}
+            style={{ paddingTop: '24px', paddingBottom: '24px' }}
           >
             <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Press</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
@@ -715,8 +802,16 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={pressContentRef}
             style={{ height: 0, opacity: 0 }}
           >
-            {pressHighlights.length > 0 && (
-              <div style={{ marginTop: '40px', paddingBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
+              {/* Left Column - Bullet point on desktop, hidden on mobile */}
+              {!mobile && (
+                <div>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
+                </div>
+              )}
+
+              {/* Right Column - Press content */}
+              {pressHighlights.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse" style={{ fontSize: '17px' }}>
                     <tbody>
@@ -780,21 +875,21 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '40px 20px' : '60px 40px 60px 40px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
           <div 
-            onClick={() => toggleSection('contact')}
+            onClick={() => toggleAndScrollToSection('contact', contactSectionRef)}
             className="cursor-pointer py-8 flex items-center justify-between"
-            style={{ paddingTop: '32px', paddingBottom: '32px' }}
+            style={{ paddingTop: '24px', paddingBottom: '24px' }}
           >
             <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Contact</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
@@ -832,125 +927,124 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 opacity: 1 !important;
               }
             `}} />
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '200px 1fr', gap: mobile ? '20px' : '120px', marginTop: '40px', paddingBottom: '20px' }}>
-              {!mobile && (
-                <div>
-                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
-                </div>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '32px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
+              {/* Left Column - CTA on desktop, shows above form on mobile */}
+              <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
+                <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%', marginBottom: '24px' }} />
+                <p style={{ margin: 0, maxWidth: mobile ? '100%' : '280px' }}>
+                  Drop me a line, would love to hear from you about your next project or collaboration.
+                </p>
+              </div>
 
-              <div style={{ maxWidth: mobile ? '100%' : '100%', marginLeft: mobile ? '0' : '0' }}>
-                <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
-                  
-                  {/* Contact Form */}
-                  <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: mobile ? '100%' : '1000px', width: '100%' }}>
-                      {/* Name Field */}
-                      <div>
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleFormChange}
-                          placeholder="Name"
-                          required
-                          disabled={formStatus === 'submitting'}
-                          style={{
-                            width: '100%',
-                            padding: '12px 0',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                            color: '#FFFFFF',
-                            fontSize: '18px',
-                            fontFamily: 'inherit',
-                            outline: 'none',
-                          }}
-                        />
-                      </div>
+              {/* Right Column - Contact Form */}
+              <div>
+                <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+                  {/* Name Field */}
+                  <div>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      placeholder="Name"
+                      required
+                      disabled={formStatus === 'submitting'}
+                      style={{
+                        width: '100%',
+                        padding: '12px 0',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                        color: '#FFFFFF',
+                        fontSize: '18px',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
 
-                      {/* Email Field */}
-                      <div>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleFormChange}
-                          placeholder="Email"
-                          required
-                          disabled={formStatus === 'submitting'}
-                          style={{
-                            width: '100%',
-                            padding: '12px 0',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                            color: '#FFFFFF',
-                            fontSize: '18px',
-                            fontFamily: 'inherit',
-                            outline: 'none',
-                          }}
-                        />
-                      </div>
+                  {/* Email Field */}
+                  <div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleFormChange}
+                      placeholder="Email"
+                      required
+                      disabled={formStatus === 'submitting'}
+                      style={{
+                        width: '100%',
+                        padding: '12px 0',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                        color: '#FFFFFF',
+                        fontSize: '18px',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
 
-                      {/* Message Field */}
-                      <div>
-                        <textarea
-                          name="message"
-                          value={formData.message}
-                          onChange={handleFormChange}
-                          placeholder="Message"
-                          required
-                          rows={4}
-                          disabled={formStatus === 'submitting'}
-                          style={{
-                            width: '100%',
-                            padding: '12px 0',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                            color: '#FFFFFF',
-                            fontSize: '18px',
-                            fontFamily: 'inherit',
-                            outline: 'none',
-                            resize: 'vertical',
-                            minHeight: '80px',
-                          }}
-                        />
-                      </div>
+                  {/* Message Field */}
+                  <div>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleFormChange}
+                      placeholder="Message"
+                      required
+                      rows={4}
+                      disabled={formStatus === 'submitting'}
+                      style={{
+                        width: '100%',
+                        padding: '12px 0',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                        color: '#FFFFFF',
+                        fontSize: '18px',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        resize: 'vertical',
+                        minHeight: '80px',
+                      }}
+                    />
+                  </div>
 
-                      {/* Submit Button */}
-                      <button
-                        type="submit"
-                        disabled={formStatus === 'submitting'}
-                        style={{
-                          alignSelf: 'flex-start',
-                          padding: '12px 0',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                          color: '#FFFFFF',
-                          fontSize: '18px',
-                          fontFamily: 'inherit',
-                          cursor: formStatus === 'submitting' ? 'not-allowed' : 'pointer',
-                          opacity: formStatus === 'submitting' ? 0.5 : 1,
-                        }}
-                      >
-                        {formStatus === 'submitting' ? 'Sending...' : formStatus === 'success' ? 'Sent ✓' : 'Send'}
-                      </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={formStatus === 'submitting'}
+                    style={{
+                      alignSelf: 'flex-start',
+                      padding: '12px 0',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                      color: '#FFFFFF',
+                      fontSize: '18px',
+                      fontFamily: 'inherit',
+                      cursor: formStatus === 'submitting' ? 'not-allowed' : 'pointer',
+                      opacity: formStatus === 'submitting' ? 0.5 : 1,
+                    }}
+                  >
+                    {formStatus === 'submitting' ? 'Sending...' : formStatus === 'success' ? 'Sent ✓' : 'Send'}
+                  </button>
 
-                      {/* Status Messages */}
-                      {formStatus === 'error' && (
-                        <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
-                          Something went wrong. Please try again.
-                        </div>
-                      )}
-                      {formStatus === 'success' && (
-                        <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
-                          Message sent successfully!
-                        </div>
-                      )}
-                    </form>
-                </div>
+                  {/* Status Messages */}
+                  {formStatus === 'error' && (
+                    <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
+                      Something went wrong. Please try again.
+                    </div>
+                  )}
+                  {formStatus === 'success' && (
+                    <div style={{ color: '#FFFFFF', fontSize: '14px', opacity: 0.7, marginTop: '-16px' }}>
+                      Message sent successfully!
+                    </div>
+                  )}
+                </form>
               </div>
             </div>
           </div>
@@ -958,44 +1052,130 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col" style={{ padding: mobile ? '40px 20px 80px 20px' : '60px 40px 120px 40px' }}>
-        <div className="w-full">
+      <div className="flex flex-col" style={{ 
+        padding: mobile ? '0 20px' : '0 40px',
+        minHeight: '50vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        <div className="w-full" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
           <div className="border-t border-white" />
-          <div style={{ paddingTop: '40px', display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'center', gap: mobile ? '20px' : '0', fontSize: '14px', opacity: 0.7 }}>
-            <div suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
-            <div style={{ display: 'flex', gap: mobile ? '20px' : '30px', alignItems: 'center' }}>
-              <AnimatedLink
-                href="https://instagram.com/yopablo"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          
+          {/* Main Footer Content */}
+          <div style={{ 
+            paddingTop: mobile ? '40px' : '48px',
+            display: 'flex',
+            flexDirection: mobile ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: mobile ? 'center' : 'flex-end',
+            gap: mobile ? '32px' : '40px',
+            flex: 1,
+          }}>
+            
+            {/* Left Side - Big YOPABLO */}
+            <h2 style={{ 
+              fontSize: mobile ? '48px' : 'clamp(64px, 8vw, 120px)',
+              fontWeight: '700',
+              letterSpacing: '-0.02em',
+              margin: 0,
+              lineHeight: '1',
+              textAlign: mobile ? 'center' : 'left'
+            }}>
+              YOPABLO
+            </h2>
+
+            {/* Right Side - Subscribe + Socials */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: mobile ? 'center' : 'flex-end' }}>
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const form = e.target as HTMLFormElement
+                  const emailInput = form.elements.namedItem('email') as HTMLInputElement
+                  const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT
+                  if (!formspreeEndpoint || !emailInput.value) return
+                  
+                  try {
+                    await fetch(formspreeEndpoint, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: emailInput.value, _subject: 'New Subscriber' })
+                    })
+                    emailInput.value = ''
+                    alert('Subscribed!')
+                  } catch {
+                    alert('Error subscribing')
+                  }
+                }}
+                style={{ display: 'flex', gap: '0' }}
               >
-                <Instagram size={18} strokeWidth={1.5} />
-                <span>Instagram</span>
-              </AnimatedLink>
-              <AnimatedLink
-                href="https://x.com/yopablo"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Twitter size={18} strokeWidth={1.5} />
-                <span>Twitter</span>
-              </AnimatedLink>
-              <AnimatedLink
-                href="https://www.linkedin.com/in/pablo-gnecco-7b700939/"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Linkedin size={18} strokeWidth={1.5} />
-                <span>LinkedIn</span>
-              </AnimatedLink>
-              <AnimatedLink
-                href="mailto:hello@pablognecco.com"
-              >
-                Email
-              </AnimatedLink>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="your@email.com"
+                  required
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRight: 'none',
+                    padding: '10px 14px',
+                    fontSize: '14px',
+                    color: 'white',
+                    width: '180px',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: 'white',
+                    color: '#0020FF',
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Subscribe
+                </button>
+              </form>
+              
+              {/* Social Icons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
+                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
+                  <Instagram size={18} strokeWidth={1.5} />
+                </AnimatedLink>
+                <AnimatedLink href="https://x.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
+                  <Twitter size={18} strokeWidth={1.5} />
+                </AnimatedLink>
+                <AnimatedLink href="https://www.linkedin.com/in/pablo-gnecco-7b700939/" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
+                  <Linkedin size={18} strokeWidth={1.5} />
+                </AnimatedLink>
+                <AnimatedLink href="mailto:hello@pablognecco.com" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
+                  <Mail size={18} strokeWidth={1.5} />
+                </AnimatedLink>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row */}
+          <div style={{ 
+            marginTop: 'auto',
+            paddingTop: '20px',
+            paddingBottom: mobile ? '40px' : '60px',
+            borderTop: '1px solid rgba(255,255,255,0.15)',
+            display: 'flex',
+            flexDirection: mobile ? 'column' : 'row',
+            justifyContent: mobile ? 'center' : 'space-between',
+            alignItems: 'center',
+            gap: mobile ? '16px' : '0',
+            fontSize: '13px'
+          }}>
+            <div style={{ opacity: 0.5 }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+              <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
+              <AnimatedLink href="#" onClick={(e: React.MouseEvent) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{ opacity: 0.6 }}>Back to Top</AnimatedLink>
             </div>
           </div>
         </div>
@@ -1023,6 +1203,236 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           {comingSoonMessage}
         </div>
       )}
+
+      {/* Work Panel Overlay */}
+      <div
+        ref={workPanelRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 10001,
+          display: 'flex',
+          transform: 'translateX(100%)',
+          pointerEvents: isWorkOpen ? 'auto' : 'none',
+        }}
+      >
+        {/* 100px Blue Column - Click to go back */}
+        <div
+          onClick={() => setIsWorkOpen(false)}
+          style={{
+            width: mobile ? '60px' : '100px',
+            height: '100%',
+            backgroundColor: '#0020FF',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <X size={mobile ? 24 : 32} color="#FFFFFF" strokeWidth={1.5} />
+        </div>
+
+        {/* Work Content Area */}
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            overflowY: 'auto',
+            height: '100%',
+          }}
+        >
+          {/* Work Content */}
+          <div style={{ padding: mobile ? '40px 20px' : '60px 40px' }}>
+            <div className="w-full">
+              <div style={{ paddingBottom: '32px' }}>
+                <h2 style={{ fontSize: mobile ? '32px' : '48px', fontWeight: '700', letterSpacing: '-0.02em', margin: 0, color: '#000000' }}>Work</h2>
+                <p style={{ fontSize: mobile ? '14px' : '16px', fontWeight: '500', letterSpacing: '0.05em', margin: '12px 0 0 0', color: '#0020FF', textTransform: 'uppercase' }}>Under Construction</p>
+              </div>
+
+              <div className="border-t border-black" />
+
+              <div>
+                {/* Top Section: Text on left, Two stacked rectangles on right */}
+                <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '40px' : '120px', alignItems: 'start' }}>
+                  {/* Left Column - Text */}
+                  <div>
+                    <p style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6', margin: 0, maxWidth: '100%', color: '#000000' }}>
+                      {workIntroText || 'A collection of experiential installations, interactive works, and creative technology projects spanning public art, brand activations, and cultural institutions.'}
+                    </p>
+                  </div>
+
+                  {/* Right Column - Two stacked rectangles */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {filteredProjects.slice(0, 2).map((project, index) => (
+                      <div
+                        key={project._id}
+                        style={{
+                          aspectRatio: '1',
+                          backgroundColor: '#E5E5E5',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          cursor: project.projectUrl ? 'pointer' : 'default',
+                        }}
+                        onClick={() => {
+                          if (project.projectUrl) {
+                            window.open(project.projectUrl, '_blank', 'noopener,noreferrer')
+                          }
+                        }}
+                      >
+                        {project.image ? (
+                          <Image
+                            src={urlFor(project.image).width(800).height(800).url()}
+                            alt={project.image.alt || project.title}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : null}
+                      </div>
+                    ))}
+                    {/* Show placeholders if less than 2 projects */}
+                    {filteredProjects.length < 2 && Array.from({ length: 2 - filteredProjects.length }).map((_, index) => (
+                      <div
+                        key={`placeholder-${index}`}
+                        style={{
+                          aspectRatio: '1',
+                          backgroundColor: '#E5E5E5',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Categories Section - Below text */}
+                <div style={{ marginTop: '40px', maxWidth: mobile ? '100%' : '50%' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Left Column Categories */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {categories.slice(0, 7).map((category) => {
+                        const isActive = selectedCategory === category
+                        
+                        return (
+                          <button
+                            key={category}
+                            onClick={() => handleCategoryClick(category)}
+                            style={{
+                              fontSize: '16px',
+                              textAlign: 'left',
+                              padding: '8px 0',
+                              background: isActive ? '#0020FF' : 'transparent',
+                              color: isActive ? '#FFFFFF' : '#000000',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                              opacity: selectedCategory && !isActive ? 0.3 : 1,
+                              fontWeight: isActive ? '600' : '400',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.background = '#0020FF'
+                                e.currentTarget.style.color = '#FFFFFF'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.background = 'transparent'
+                                e.currentTarget.style.color = '#000000'
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Right Column Categories */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {categories.slice(7).map((category) => {
+                        const isActive = selectedCategory === category
+                        
+                        return (
+                          <button
+                            key={category}
+                            onClick={() => handleCategoryClick(category)}
+                            style={{
+                              fontSize: '16px',
+                              textAlign: 'left',
+                              padding: '8px 0',
+                              background: isActive ? '#0020FF' : 'transparent',
+                              color: isActive ? '#FFFFFF' : '#000000',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                              opacity: selectedCategory && !isActive ? 0.3 : 1,
+                              fontWeight: isActive ? '600' : '400',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.background = '#0020FF'
+                                e.currentTarget.style.color = '#FFFFFF'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.background = 'transparent'
+                                e.currentTarget.style.color = '#000000'
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Projects Grid - Below categories, left-aligned */}
+                {filteredProjects.length > 2 && (
+                  <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: '20px', maxWidth: mobile ? '100%' : '50%' }}>
+                    {filteredProjects.slice(2).map((project) => (
+                      <div
+                        key={project._id}
+                        style={{
+                          aspectRatio: '1',
+                          backgroundColor: '#E5E5E5',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          cursor: project.projectUrl ? 'pointer' : 'default',
+                        }}
+                        onClick={() => {
+                          if (project.projectUrl) {
+                            window.open(project.projectUrl, '_blank', 'noopener,noreferrer')
+                          }
+                        }}
+                      >
+                        {project.image ? (
+                          <Image
+                            src={urlFor(project.image).width(800).height(800).url()}
+                            alt={project.image.alt || project.title}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                          />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {filteredProjects.length === 0 && (
+                  <div style={{ marginTop: '40px', color: '#999', fontSize: '18px' }}>
+                    {selectedCategory ? `No projects found in "${selectedCategory}" category.` : 'No projects available.'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   )

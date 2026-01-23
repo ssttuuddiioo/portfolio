@@ -161,7 +161,7 @@ export function ImageRevealShader({
   useEffect(() => {
     gsap.to(progressRef.current, {
       value: isVisible ? 1 : 0,
-      duration: 1.2,
+      duration: 2.4,
       ease: 'power2.out',
       onUpdate: () => {
         setProgress(progressRef.current.value)
