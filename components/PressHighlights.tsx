@@ -82,7 +82,43 @@ export async function PressHighlights() {
           {settings.pressHighlightsTitle}
         </h2>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card Layout */}
+        <div className="md:hidden">
+          {highlights.map((highlight) => {
+            const formattedDate = new Date(highlight.date).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
+
+            return (
+              <AnimatedLink
+                key={highlight._id}
+                href={highlight.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`block py-4 border-b border-white/30 min-h-[44px] ${
+                  highlight.featured ? 'bg-[#FDF843]' : ''
+                }`}
+                style={{ padding: highlight.featured ? '16px 12px' : '16px 0' }}
+              >
+                <div className={`font-bold text-base ${
+                  highlight.featured ? 'text-[#0020FF]' : 'text-white'
+                }`}>
+                  {highlight.title}
+                </div>
+                <div className={`text-sm mt-1 ${
+                  highlight.featured ? 'text-[#0020FF]/70' : 'text-white/70'
+                }`}>
+                  {highlight.publication} · {formattedDate}
+                </div>
+              </AnimatedLink>
+            )
+          })}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full" style={{ borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1.5px solid white' }}>

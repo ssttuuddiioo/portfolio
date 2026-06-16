@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { Instagram, Twitter, Linkedin, Menu, ArrowUp, Mail, X } from 'lucide-react'
+import { Instagram, Twitter, Linkedin, Mail, X } from 'lucide-react'
 import Image from 'next/image'
 import { AnimatedLink } from './AnimatedLink'
 import { ImageRevealShader } from './ImageRevealShader'
+import { InteractiveBio } from './InteractiveBio'
 import { PressHighlight } from '@/types/pressHighlight'
 import { Project } from '@/types/project'
 import { urlFor } from '@/sanity/lib/image'
@@ -21,10 +22,10 @@ interface LandingPageProps {
 
 export function LandingPage({ pressHighlights, projects, workIntroText }: LandingPageProps) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    about: false,
+    about: true,
     experience: false,
     press: false,
-    contact: false,
+    contact: true,
   })
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isPabloHovered, setIsPabloHovered] = useState(false)
@@ -34,18 +35,19 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
-  const [isScrolledDown, setIsScrolledDown] = useState(false)
   const [imageTop, setImageTop] = useState('50%')
   const [isWorkOpen, setIsWorkOpen] = useState(false)
 
   const aboutSectionRef = useRef<HTMLDivElement>(null)
   const aboutContentRef = useRef<HTMLDivElement>(null)
+  const aboutInitRef = useRef(false)
   const experienceSectionRef = useRef<HTMLDivElement>(null)
   const experienceContentRef = useRef<HTMLDivElement>(null)
   const pressSectionRef = useRef<HTMLDivElement>(null)
   const pressContentRef = useRef<HTMLDivElement>(null)
   const contactContentRef = useRef<HTMLDivElement>(null)
   const contactSectionRef = useRef<HTMLDivElement>(null)
+  const contactInitRef = useRef(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const navLinksRef = useRef<HTMLDivElement>(null)
   const heroContainerRef = useRef<HTMLDivElement>(null)
@@ -105,15 +107,60 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   const scrollToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
+    const wasOpen = openSections.contact
     if (!openSections.contact) {
       setOpenSections(prev => ({ ...prev, contact: true }))
-    } else {
-      // If already open, just scroll to it
-      gsap.to(window, {
-        scrollTo: { y: "max", autoKill: true },
-        duration: 1.0,
-        ease: 'power2.inOut'
-      })
+    }
+    
+    if (contactSectionRef.current) {
+      const delay = wasOpen ? 0 : (mobile ? 200 : 150)
+      
+      setTimeout(() => {
+        const sectionElement = contactSectionRef.current
+        if (!sectionElement) return
+        
+        // Detect iOS Safari
+        const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                           !(window as any).MSStream
+        
+        if (isIOSSafari || mobile) {
+          // Find the header div with bullet point, or use section start
+          const headerDiv = sectionElement.querySelector('div[class*="cursor-pointer"]') as HTMLElement
+          const borderDiv = sectionElement.querySelector('.border-t') as HTMLElement
+          const targetElement = borderDiv || headerDiv || sectionElement
+          
+          if (targetElement) {
+            // Calculate exact position BEFORE scrolling
+            const rect = targetElement.getBoundingClientRect()
+            const elementTop = rect.top + window.scrollY
+            const offset = mobile ? 12 : 48
+            
+            // Clamp to document bounds to prevent overshooting
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+            const targetY = Math.max(0, Math.min(elementTop - offset, maxScroll))
+            
+            // Single smooth scroll to exact position - no adjustments needed
+            window.scrollTo({ 
+              top: targetY, 
+              behavior: 'smooth' 
+            })
+          }
+        } else {
+          // Use GSAP for desktop (non-iOS)
+          const rect = sectionElement.getBoundingClientRect()
+          const elementTop = rect.top + window.scrollY
+          const offset = 48
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+          const targetY = Math.max(0, Math.min(elementTop - offset, maxScroll))
+          
+          gsap.killTweensOf(window)
+          gsap.to(window, {
+            scrollTo: { y: targetY, autoKill: false },
+            duration: 1.0,
+            ease: 'power2.inOut'
+          })
+        }
+      }, delay)
     }
   }
 
@@ -198,17 +245,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     return () => window.removeEventListener('resize', checkBreakpoints)
   }, [])
 
-  // Track scroll position for hamburger/arrow toggle
-  useEffect(() => {
-    const handleScroll = () => {
-      // Consider "scrolled down" if past 100px
-      setIsScrolledDown(window.scrollY > 100)
-    }
-    
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
   // Calculate image position between title and nav links
   useEffect(() => {
     const calculateImagePosition = () => {
@@ -236,6 +272,13 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     const contentRef = aboutContentRef.current
     if (contentRef) {
       if (openSections.about) {
+        // Open by default on first mount — show instantly, no animation
+        if (!aboutInitRef.current) {
+          aboutInitRef.current = true
+          gsap.set(contentRef, { height: 'auto', opacity: 1 })
+          contentRef.style.overflow = 'visible'
+          return
+        }
         contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
@@ -251,6 +294,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           }
         )
       } else {
+        aboutInitRef.current = true
         contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
@@ -311,6 +355,13 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     const contentRef = contactContentRef.current
     if (contentRef) {
       if (openSections.contact) {
+        // On first mount the section is open by default — show it instantly, no auto-scroll
+        if (!contactInitRef.current) {
+          contactInitRef.current = true
+          gsap.set(contentRef, { height: 'auto', opacity: 1 })
+          contentRef.style.overflow = 'visible'
+          return
+        }
         contentRef.style.overflow = 'hidden'
         gsap.fromTo(
           contentRef,
@@ -339,6 +390,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           ease: 'power2.inOut'
         })
       } else {
+        contactInitRef.current = true
         contentRef.style.overflow = 'hidden'
         gsap.to(contentRef, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.in' })
       }
@@ -383,117 +435,103 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const mobile = hasMounted ? isMobile : false
   const medium = hasMounted ? isMedium : false
 
+  // Show only the Contact section for now — flip to true to restore Work, About, Experience, Press
+  const showSecondarySections = false
+
   return (
     <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
       {/* Page 1 - Intro */}
-      <div ref={heroContainerRef} className="flex flex-col p-8 md:p-12 lg:p-16" style={{ height: '100vh', minHeight: '100vh', position: 'relative' }}>
-        <div className="flex-1 flex flex-col justify-between">
+      <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
+        position: 'relative', 
+        padding: mobile ? '12px' : '48px',
+        height: mobile ? '100dvh' : 'auto',
+        minHeight: mobile ? '100dvh' : '100vh',
+        maxHeight: mobile ? '100dvh' : 'none',
+        overflow: mobile ? 'hidden' : 'visible'
+      }}>
+        <div className="flex-1 flex flex-col" style={{ minHeight: 0, height: '100%', justifyContent: 'space-between' }}>
           {/* Top Section - Large Heading */}
-          <div style={{ paddingTop: mobile ? '20px' : '50px', paddingLeft: mobile ? '20px' : '40px', flex: mobile ? '0 0 auto' : '1' }}>
-            <h1 ref={titleRef} style={{ fontSize: mobile ? '2rem' : medium ? '3.2rem' : '4.6rem', lineHeight: '1.1', maxWidth: mobile ? '100%' : '75%' }} className="font-bold text-white">
-              Hi. I&apos;m{' '}
-              <AnimatedLink
-                href="#about"
-                onClick={scrollToAbout}
-                className="underline cursor-pointer"
-                style={{ color: '#FFFFFF !important', textDecorationColor: 'white' }}
-                onMouseEnter={() => setIsPabloHovered(true)}
-                onMouseLeave={() => setIsPabloHovered(false)}
-              >
-                Pablo
-              </AnimatedLink>
-              , an experiential artist, technologist, and designer from Colombia,
-              living and working in{' '}
-              <span className="line-through" style={{ color: 'white' }}>ATL</span>,{' '}
-              <span className="line-through" style={{ color: 'white' }}>MIA</span>,{' '}
-              <span className="line-through" style={{ color: 'white' }}>BOG</span>, NYC.
-            </h1>
+          <div style={{ 
+            paddingTop: mobile ? '0' : '0', 
+            paddingLeft: mobile ? '20px' : '40px', 
+            paddingRight: mobile ? '20px' : '40px', 
+            flex: mobile ? '1 1 auto' : '1',
+            minHeight: 0,
+            overflow: 'hidden'
+          }}>
+            <div ref={titleRef}>
+              <InteractiveBio mobile={mobile} />
+            </div>
           </div>
           
           {/* Navigation Links - Bottom on mobile, top on desktop */}
-          <div ref={navLinksRef} style={{ 
+          <div ref={navLinksRef} className="hero-nav-container" style={{ 
             marginTop: mobile ? 'auto' : '80px',
             paddingLeft: mobile ? '20px' : '40px',
             paddingRight: mobile ? '20px' : '40px',
-            paddingBottom: mobile ? '40px' : '60px',
+            paddingBottom: mobile ? '0' : '0',
             display: 'flex', 
             flexDirection: mobile ? 'column' : 'row',
-            alignItems: mobile ? 'flex-start' : 'center',
-            justifyContent: 'space-between',
-            gap: mobile ? '20px' : '0',
+            alignItems: 'center',
+            justifyContent: mobile ? 'center' : 'space-between',
+            gap: mobile ? '6px' : '0',
             position: 'relative',
             zIndex: 10000,
+            flexShrink: 0,
+            flexGrow: 0
           }}>
-            <div style={{ 
+            <div className="hero-nav-links" style={{ 
               display: 'flex', 
-              flexDirection: mobile ? 'column' : 'row',
-              gap: mobile ? '20px' : '0',
-              flexWrap: 'wrap'
+              flexDirection: mobile ? 'row' : 'row',
+              gap: mobile ? '6px' : '0',
+              flexWrap: 'wrap',
+              justifyContent: mobile ? 'center' : 'flex-start',
+              alignItems: 'center',
+              order: mobile ? 0 : 0
             }}>
-              <AnimatedLink 
+              {showSecondarySections && (
+                <>
+              <AnimatedLink
                 href="#work"
                 onClick={(e) => {
                   e.preventDefault()
                   setIsWorkOpen(true)
                 }}
-                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '0', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-                className="font-bold underline cursor-pointer"
+                style={{ 
+                  lineHeight: '1', 
+                  display: 'inline-block', 
+                  color: '#FFFFFF',
+                  fontSize: mobile ? 'clamp(0.875rem, 1.2vw + 0.4rem, 1.125rem)' : 'clamp(1.5rem, 3vw + 1rem, 3.75rem)',
+                  padding: mobile ? '6px 4px' : '8px 0',
+                  textDecorationThickness: '1px',
+                  textUnderlineOffset: '2px',
+                  fontWeight: '700',
+                }} 
+                className="font-bold underline cursor-pointer min-h-[44px] hero-nav-link"
               >
                 View Work   
               </AnimatedLink>
               <AnimatedLink 
                 href="#about"
                 onClick={scrollToAbout}
-                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-                className="font-bold underline cursor-pointer"
+                style={{ 
+                  lineHeight: '1', 
+                  marginLeft: mobile ? '0' : '30px', 
+                  display: 'inline-block', 
+                  color: '#FFFFFF',
+                  fontSize: mobile ? 'clamp(1rem, 1.5vw + 0.5rem, 1.25rem)' : 'clamp(1.5rem, 3vw + 1rem, 3.75rem)',
+                  padding: mobile ? '8px 4px' : '8px 0',
+                  textDecorationThickness: '1px',
+                  textUnderlineOffset: '2px',
+                  fontWeight: '700',
+                }} 
+                className="font-bold underline cursor-pointer min-h-[44px] hero-nav-link"
               >
-                Bio
+                About
               </AnimatedLink>
-              <AnimatedLink 
-                href="#contact"
-                onClick={scrollToContact}
-                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-                className="font-bold underline cursor-pointer"
-              >
-                Contact
-              </AnimatedLink>
-              <AnimatedLink 
-                href="#experiments"
-                onClick={(e) => showComingSoon(e, 'Coming Soon')}
-                style={{ fontSize: mobile ? '1.8rem' : medium ? '2rem' : '2.5rem', lineHeight: '1', marginLeft: mobile ? '0' : '30px', display: 'inline-block', color: '#FFFFFF', fontWeight: 'bold' }} 
-                className="font-bold underline cursor-pointer"
-              >
-                Experiments
-              </AnimatedLink>
-            </div>
-            
-            {/* Hamburger/Arrow Toggle - Scrolls to footer or back to top */}
-            <button
-              onClick={() => {
-                if (isScrolledDown) {
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
-                } else {
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
-                }
-              }}
-              style={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                color: '#FFFFFF',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'transform 0.3s ease'
-              }}
-              aria-label={isScrolledDown ? "Scroll to top" : "Scroll to footer"}
-            >
-              {isScrolledDown ? (
-                <ArrowUp size={mobile ? 32 : 40} strokeWidth={1.5} />
-              ) : (
-                <Menu size={mobile ? 32 : 40} strokeWidth={1.5} />
+                </>
               )}
-            </button>
+            </div>
           </div>
         </div>
         
@@ -525,7 +563,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
-      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
+      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -534,15 +572,15 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             className="cursor-pointer py-8 flex items-center justify-between"
             style={{ paddingTop: '24px', paddingBottom: '24px' }}
           >
-            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Bio</h2>
+            <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>About me</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
               {openSections.about ? '−' : '+'}
             </span>
           </div>
 
-          <div 
+          <div
             ref={aboutContentRef}
-            style={{ height: 0, opacity: 0 }}
+            style={{ opacity: 1 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
               {/* Left Column - Bullet point on desktop, hidden on mobile */}
@@ -555,21 +593,13 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               {/* Right Column - Bio content */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
                 <p style={{ margin: 0 }}>
-                  Pablo Gnecco is a Colombian-born experiential director and creative
-                  technologist based in New York. He creates immersive installations for public
-                  art, brand activations, and cultural institutions—working at the intersection
-                  of motion, interaction, and physical computing.
+                  I’m Pablo Gnecco, a Colombian-born experiential director and creative technologist based in Brooklyn. I create immersive installations for public art, brand activations, and cultural institutions, working with light, code, and hardware to make physical things that respond to the people around them, always with the belief that the story matters more than the spectacle.
                 </p>
                 <p style={{ margin: 0 }}>
-                  Clients include Google, Intel, Sony, and Michigan Central Station. An early
-                  member of The New Museum&apos;s NEW INC and resident artist at Mana
-                  Contemporary, Pablo founded Studio Studio and the 9to5.tv festival in
-                  Atlanta.
+                  I studied at SCAD in Savannah and have since made work for clients across tech, entertainment, and the cultural world, with projects shown at major festivals. I’ve been an early member and resident artist at a few new media spaces, and over the years I’ve collaborated with art and research institutions through my practice, Studio Studio. These days I’m focused on permanent light installations and new media sculptures, alongside Origen, a specialty coffee company I started to connect roasters directly with Colombian farmers.
                 </p>
                 <p style={{ margin: 0 }}>
-                  Currently developing permanent light installations and new media sculptures
-                  while building Origen, a specialty coffee company connecting roasters with
-                  Colombian farmers.
+                  When I’m not in the studio, I’m usually on a bike, in the water, or carrying a camera around. I’m currently open to new work, including consulting and freelance projects, so if you’re building something interesting, I’d like to hear about it.
                 </p>
               </div>
             </div>
@@ -577,8 +607,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         </div>
       </div>
 
+      {showSecondarySections && (
+      <>
       {/* Experience Section */}
-      <div ref={experienceSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
+      <div ref={experienceSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -616,6 +648,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://chemistrycreative.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         Chemistry Creative Inc. ↗
@@ -628,6 +661,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://studiostudio.nyc" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         Studio–Studio ↗
@@ -640,6 +674,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://invisiblenorth.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         Invisible North ↗
@@ -652,6 +687,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://giantspoon.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         Giant Spoon ↗
@@ -664,6 +700,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://leaddog.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         Leaddog Marketing ↗
@@ -676,6 +713,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                         href="https://movl.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        className="min-h-[44px] inline-flex items-center"
                         style={{ fontSize: '16px' }}
                       >
                         MOVL ↗
@@ -783,7 +821,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Press Section */}
-      <div ref={pressSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
+      <div ref={pressSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -880,9 +918,11 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 20px' : '0 40px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
         <div className="w-full">
           <div className="border-t border-white" />
           
@@ -1053,7 +1093,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
       {/* Footer */}
       <div className="flex flex-col" style={{ 
-        padding: mobile ? '0 20px' : '0 40px',
+        padding: mobile ? '0 32px' : '0 88px',
         minHeight: '50vh',
         display: 'flex',
         flexDirection: 'column',
@@ -1061,105 +1101,55 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         <div className="w-full" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
           <div className="border-t border-white" />
           
-          {/* Main Footer Content */}
-          <div style={{ 
+          {/* Footer wordmark + socials */}
+          <div style={{
             paddingTop: mobile ? '40px' : '48px',
-            display: 'flex',
-            flexDirection: mobile ? 'column' : 'row',
-            justifyContent: 'space-between',
-            alignItems: mobile ? 'center' : 'flex-end',
-            gap: mobile ? '32px' : '40px',
             flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            gap: '500px',
           }}>
-            
-            {/* Left Side - Big YOPABLO */}
-            <h2 style={{ 
-              fontSize: mobile ? '48px' : 'clamp(64px, 8vw, 120px)',
-              fontWeight: '700',
-              letterSpacing: '-0.02em',
-              margin: 0,
-              lineHeight: '1',
-              textAlign: mobile ? 'center' : 'left'
-            }}>
-              YOPABLO
-            </h2>
-
-            {/* Right Side - Subscribe + Socials */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: mobile ? 'center' : 'flex-end' }}>
-              <form 
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  const form = e.target as HTMLFormElement
-                  const emailInput = form.elements.namedItem('email') as HTMLInputElement
-                  const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT
-                  if (!formspreeEndpoint || !emailInput.value) return
-                  
-                  try {
-                    await fetch(formspreeEndpoint, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ email: emailInput.value, _subject: 'New Subscriber' })
-                    })
-                    emailInput.value = ''
-                    alert('Subscribed!')
-                  } catch {
-                    alert('Error subscribing')
-                  }
-                }}
-                style={{ display: 'flex', gap: '0' }}
+            <svg
+              viewBox="0 0 1000 160"
+              width="100%"
+              role="img"
+              aria-label="YOPABLO"
+              style={{ display: 'block', overflow: 'visible', marginTop: '300px' }}
+            >
+              <text
+                x="0"
+                y="140"
+                textLength="1000"
+                lengthAdjust="spacingAndGlyphs"
+                fontSize="175"
+                fontWeight="700"
+                fill="#FFFFFF"
+                style={{ fontFamily: 'inherit' }}
               >
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="your@email.com"
-                  required
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRight: 'none',
-                    padding: '10px 14px',
-                    fontSize: '14px',
-                    color: 'white',
-                    width: '180px',
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    backgroundColor: 'white',
-                    color: '#0020FF',
-                    padding: '10px 20px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Subscribe
-                </button>
-              </form>
-              
-              {/* Social Icons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
-                  <Instagram size={18} strokeWidth={1.5} />
-                </AnimatedLink>
-                <AnimatedLink href="https://x.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
-                  <Twitter size={18} strokeWidth={1.5} />
-                </AnimatedLink>
-                <AnimatedLink href="https://www.linkedin.com/in/pablo-gnecco-7b700939/" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
-                  <Linkedin size={18} strokeWidth={1.5} />
-                </AnimatedLink>
-                <AnimatedLink href="mailto:hello@pablognecco.com" style={{ display: 'inline-flex', color: '#FFFFFF', opacity: 0.6 }}>
-                  <Mail size={18} strokeWidth={1.5} />
-                </AnimatedLink>
-              </div>
+                YOPABLO
+              </text>
+            </svg>
+
+            {/* Social Icons - centered */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
+                <Instagram size={24} strokeWidth={1.5} />
+              </AnimatedLink>
+              <AnimatedLink href="https://x.com/yopablo" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
+                <Twitter size={24} strokeWidth={1.5} />
+              </AnimatedLink>
+              <AnimatedLink href="https://www.linkedin.com/in/pablo-gnecco-7b700939/" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
+                <Linkedin size={24} strokeWidth={1.5} />
+              </AnimatedLink>
+              <AnimatedLink href="mailto:hello@pablognecco.com" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
+                <Mail size={24} strokeWidth={1.5} />
+              </AnimatedLink>
             </div>
           </div>
 
           {/* Bottom Row */}
-          <div style={{ 
+          <div className="pb-safe" style={{ 
             marginTop: 'auto',
             paddingTop: '20px',
             paddingBottom: mobile ? '40px' : '60px',
@@ -1174,7 +1164,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             <div style={{ opacity: 0.5 }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-              <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
+              {showSecondarySections && (
+                <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
+              )}
               <AnimatedLink href="#" onClick={(e: React.MouseEvent) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{ opacity: 0.6 }}>Back to Top</AnimatedLink>
             </div>
           </div>
@@ -1207,12 +1199,13 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Work Panel Overlay */}
       <div
         ref={workPanelRef}
+        className="min-h-screen min-h-[100dvh]"
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
           width: '100vw',
-          height: '100vh',
+          height: '100dvh',
           zIndex: 10001,
           display: 'flex',
           transform: 'translateX(100%)',
@@ -1310,7 +1303,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 <div style={{ marginTop: '40px', maxWidth: mobile ? '100%' : '50%' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                     {/* Left Column Categories */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {categories.slice(0, 7).map((category) => {
                         const isActive = selectedCategory === category
                         
@@ -1321,7 +1314,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                             style={{
                               fontSize: '16px',
                               textAlign: 'left',
-                              padding: '8px 0',
+                              minHeight: '44px',
+                              padding: '8px 12px',
                               background: isActive ? '#0020FF' : 'transparent',
                               color: isActive ? '#FFFFFF' : '#000000',
                               border: 'none',
@@ -1350,7 +1344,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                     </div>
 
                     {/* Right Column Categories */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {categories.slice(7).map((category) => {
                         const isActive = selectedCategory === category
                         
@@ -1361,7 +1355,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                             style={{
                               fontSize: '16px',
                               textAlign: 'left',
-                              padding: '8px 0',
+                              minHeight: '44px',
+                              padding: '8px 12px',
                               background: isActive ? '#0020FF' : 'transparent',
                               color: isActive ? '#FFFFFF' : '#000000',
                               border: 'none',

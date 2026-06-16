@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area utilities for iOS */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+.mt-safe { margin-top: env(safe-area-inset-top); }
+
 * {
   margin: 0;
   padding: 0;
@@ -47,4 +53,65 @@ a:visited,
 a:active,
 a:focus {
   color: #FFFFFF;
+}
+
+/* Mobile layout fallbacks - prevent flash during hydration */
+@media (max-width: 899px) {
+  .hero-nav-container {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    margin-top: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 50px !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+  }
+  
+  .hero-nav-links {
+    flex-direction: row !important;
+    gap: 6px !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+  }
+  
+  .hero-title {
+    margin-bottom: 8px !important;
+    font-size: clamp(2.025rem, 4.5vw + 0.9rem, 2.7rem) !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Ensure hero container fits viewport on mobile */
+  @media (max-width: 899px) {
+    .hero-container {
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      overflow: hidden !important;
+    }
+  }
+  
+  .hero-title {
+    max-width: 100% !important;
+  }
+  
+  .hero-nav-link {
+    margin-left: 0 !important;
+  }
+  
+  .subscribe-form {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  
+  .subscribe-form input {
+    width: 100% !important;
+    border-right: 1px solid rgba(255,255,255,0.3) !important;
+    border-bottom: none !important;
+  }
+  
+  .subscribe-form button {
+    width: 100% !important;
+  }
 }
