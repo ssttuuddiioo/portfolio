@@ -3,8 +3,8 @@ import './globals.css'
 import { SmoothScroll } from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
-  title: 'Portfolio',
-  description: 'Brutalist portfolio with rotating sticks',
+  title: 'YOPABLO',
+  description: 'Pablo Gnecco — experiential director and creative technologist',
 }
 
 export default function RootLayout({
