@@ -84,7 +84,7 @@ export default async function Home() {
   const siteSettings = await getSiteSettings()
   
   return (
-    <div className="bg-[#0020FF]">
+    <div>
       <LandingPage 
         pressHighlights={pressHighlights}
         projects={projects}

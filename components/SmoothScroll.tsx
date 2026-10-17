@@ -66,7 +66,7 @@ export function SmoothScroll({ children }: SmoothScrollProps) {
   }, [])
 
   return (
-    <div ref={scrollContainerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', overflow: 'hidden' }}>
+    <div ref={scrollContainerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', overflow: 'hidden', zIndex: 1 }}>
       <div ref={scrollContentRef}>
         {children}
       </div>

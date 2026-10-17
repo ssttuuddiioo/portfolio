@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { gsap } from 'gsap'
+import { AnimatedLink } from './AnimatedLink'
 
 // Clickable role (the only interactive phrase) — "I’m a/an ___ who uses art and technology…"
 const array1 = [
@@ -181,7 +182,7 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
       style={{
         lineHeight: mobile ? '1.2' : '1.1',
         maxWidth: mobile ? '100%' : '75%',
-        fontSize: mobile ? 'clamp(2.025rem, 4.5vw + 0.9rem, 2.7rem)' : 'clamp(1.35rem, 3.6vw + 0.9rem, 4.05rem)',
+        fontSize: mobile ? 'clamp(1.4175rem, 3.15vw + 0.63rem, 1.89rem)' : 'clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem)',
         marginBottom: mobile ? '8px' : '0',
         ...style,
       }}
@@ -226,7 +227,18 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
         </span>
       </span>
       {' '}
-      who uses art and technology to create light installations, immersive experiences, and websites. I also like to ride my bike around New York City, the best city in the world, and currently I’m really into micro lot coffee farming and roasting.
+      who uses design and technology to create light installations, immersive experiences, and interactive art. I also like to ride my bike in New York City, the best city in the world. Also, I’m currently really into micro-lot coffee farming and roasting.
+      <span className="block" style={{ marginTop: '0.75em' }}>
+        Check out some of my favorite projects{' '}
+        <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+          here
+        </AnimatedLink>{' '}
+        and about my coffee journey{' '}
+        <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+          here
+        </AnimatedLink>
+        .
+      </span>
     </h1>
   )
 }

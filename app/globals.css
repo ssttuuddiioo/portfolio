@@ -37,13 +37,15 @@ svg {
   shape-rendering: crispEdges;
 }
 
-/* Disable text selection */
+/* Yellow text selection */
 ::selection {
-  background: transparent;
+  background: #FDF843;
+  color: #0020FF;
 }
 
 ::-moz-selection {
-  background: transparent;
+  background: #FDF843;
+  color: #0020FF;
 }
 
 /* Force all links to be white by default */
@@ -79,7 +81,7 @@ a:focus {
   
   .hero-title {
     margin-bottom: 8px !important;
-    font-size: clamp(2.025rem, 4.5vw + 0.9rem, 2.7rem) !important;
+    font-size: clamp(1.4175rem, 3.15vw + 0.63rem, 1.89rem) !important;
     line-height: 1.2 !important;
   }
   

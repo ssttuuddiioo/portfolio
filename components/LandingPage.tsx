@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { Instagram, Twitter, Linkedin, Mail, X } from 'lucide-react'
+import { Instagram, Mail, X } from 'lucide-react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { AnimatedLink } from './AnimatedLink'
-import { ImageRevealShader } from './ImageRevealShader'
 import { InteractiveBio } from './InteractiveBio'
+
+const ScanFigure = dynamic(() => import('./ScanFigure'), { ssr: false })
 import { PressHighlight } from '@/types/pressHighlight'
 import { Project } from '@/types/project'
 import { urlFor } from '@/sanity/lib/image'
@@ -28,14 +30,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     contact: true,
   })
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [isPabloHovered, setIsPabloHovered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isMedium, setIsMedium] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
-  const [imageTop, setImageTop] = useState('50%')
   const [isWorkOpen, setIsWorkOpen] = useState(false)
 
   const aboutSectionRef = useRef<HTMLDivElement>(null)
@@ -245,29 +245,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     return () => window.removeEventListener('resize', checkBreakpoints)
   }, [])
 
-  // Calculate image position between title and nav links
-  useEffect(() => {
-    const calculateImagePosition = () => {
-      if (titleRef.current && navLinksRef.current && heroContainerRef.current) {
-        const containerRect = heroContainerRef.current.getBoundingClientRect()
-        const titleRect = titleRef.current.getBoundingClientRect()
-        const navRect = navLinksRef.current.getBoundingClientRect()
-        
-        // Calculate positions relative to the container
-        const titleBottom = titleRect.bottom - containerRect.top
-        const navTop = navRect.top - containerRect.top
-        const centerY = titleBottom + (navTop - titleBottom) / 2
-        setImageTop(`${centerY}px`)
-      }
-    }
-
-    if (hasMounted) {
-      calculateImagePosition()
-      window.addEventListener('resize', calculateImagePosition)
-      return () => window.removeEventListener('resize', calculateImagePosition)
-    }
-  }, [hasMounted])
-
   useEffect(() => {
     const contentRef = aboutContentRef.current
     if (contentRef) {
@@ -439,7 +416,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const showSecondarySections = false
 
   return (
-    <div className="bg-[#0020FF] text-white" suppressHydrationWarning>
+    <div className="text-white" suppressHydrationWarning>
+      {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
+      {hasMounted && <ScanFigure mobile={mobile} />}
+
       {/* Page 1 - Intro */}
       <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
         position: 'relative', 
@@ -461,6 +441,21 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           }}>
             <div ref={titleRef}>
               <InteractiveBio mobile={mobile} />
+              {/* Contact links below bio */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: mobile ? '8px 20px' : '8px 32px', marginTop: mobile ? '20px' : '32px', fontSize: mobile ? '15px' : '18px' }}>
+                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Instagram size={mobile ? 18 : 22} strokeWidth={1.5} />
+                    @yopablo
+                  </span>
+                </AnimatedLink>
+                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Mail size={mobile ? 18 : 22} strokeWidth={1.5} />
+                    artcoffeecomputer@gmail.com
+                  </span>
+                </AnimatedLink>
+              </div>
             </div>
           </div>
           
@@ -535,28 +530,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           </div>
         </div>
         
-        {/* Pablo Portrait - Appears on hover with shader effect (hidden on mobile) */}
-        {!mobile && (
-          <div
-            style={{
-              position: 'absolute',
-              top: imageTop,
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '700px',
-              height: '960px',
-              zIndex: 9999,
-              pointerEvents: 'none',
-            }}
-          >
-            <ImageRevealShader
-              imageUrl="/pablo.png"
-              isVisible={isPabloHovered}
-              width={1920}
-              height={1080}
-            />
-          </div>
-        )}
       </div>
 
       {/* Work Section - Only visible when opened */}
@@ -583,14 +556,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             style={{ opacity: 1 }}
           >
             <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
-              {/* Left Column - Bullet point on desktop, hidden on mobile */}
-              {!mobile && (
-                <div>
-                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
-                </div>
-              )}
-              
-              {/* Right Column - Bio content */}
+              {/* Left Column - Bio content */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
                 <p style={{ margin: 0 }}>
                   I’m Pablo Gnecco, a Colombian-born experiential director and creative technologist based in Brooklyn. I create immersive installations for public art, brand activations, and cultural institutions, working with light, code, and hardware to make physical things that respond to the people around them, always with the belief that the story matters more than the spectacle.
@@ -602,6 +568,13 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                   When I’m not in the studio, I’m usually on a bike, in the water, or carrying a camera around. I’m currently open to new work, including consulting and freelance projects, so if you’re building something interesting, I’d like to hear about it.
                 </p>
               </div>
+
+              {/* Right Column - Bullet point on desktop, hidden on mobile */}
+              {!mobile && (
+                <div>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1101,7 +1074,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         <div className="w-full" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
           <div className="border-t border-white" />
           
-          {/* Footer wordmark + socials */}
+          {/* Footer wordmark */}
           <div style={{
             paddingTop: mobile ? '40px' : '48px',
             flex: 1,
@@ -1131,21 +1104,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               </text>
             </svg>
 
-            {/* Social Icons - centered */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
-                <Instagram size={24} strokeWidth={1.5} />
-              </AnimatedLink>
-              <AnimatedLink href="https://x.com/yopablo" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
-                <Twitter size={24} strokeWidth={1.5} />
-              </AnimatedLink>
-              <AnimatedLink href="https://www.linkedin.com/in/pablo-gnecco-7b700939/" target="_blank" rel="noopener noreferrer" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
-                <Linkedin size={24} strokeWidth={1.5} />
-              </AnimatedLink>
-              <AnimatedLink href="mailto:hello@pablognecco.com" className="min-w-[44px] min-h-[44px] flex items-center justify-center" style={{ color: '#FFFFFF', opacity: 0.6 }}>
-                <Mail size={24} strokeWidth={1.5} />
-              </AnimatedLink>
-            </div>
           </div>
 
           {/* Bottom Row */}
