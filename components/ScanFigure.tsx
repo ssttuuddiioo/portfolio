@@ -12,13 +12,13 @@ const MODEL_URL = '/models/pablo-moves.glb'
 // Scan is in metres, +Y up, feet at 0, facing +Z (XR Brooklyn 2026 capture),
 // rigged in Mixamo; each clip is a named animation in the GLB, played in place
 // Clips with their own button in the row
-const CLIPS: { name: string; label: string; Icon: LucideIcon; distance?: number; yaw?: number }[] = [
+const CLIPS: { name: string; label: string; Icon: LucideIcon; yaw?: number; center?: { desktop: number; mobile: number } }[] = [
   { name: 'pacing', label: 'On the phone', Icon: Phone },
   // Turn the figure (degrees around its vertical axis) while this clip plays
   { name: 'walking', label: 'Walking', Icon: Footprints, yaw: 130 },
   { name: 'dancing', label: 'Dancing', Icon: Music },
-  // Lying flat is wider than standing tall, so pull the camera back
-  { name: 'laying', label: 'Lying down', Icon: Bed, distance: 6 },
+  // Lying flat is wider than standing tall, so slide the figure left to keep it on screen
+  { name: 'laying', label: 'Lying down', Icon: Bed, center: { desktop: 0.66, mobile: 0.5 } },
 ]
 // Played by the email button rather than its own icon
 const EMAIL_CLIP = 'typing'
@@ -26,8 +26,10 @@ const CROSSFADE = 0.5 // seconds
 const DISTANCE = 4
 const FOV = 30
 const FLOOR_MARGIN = 0.13 // metres of floor visible below the feet
-// Aim so the floor stays at the bottom of the frame at any camera distance
-const targetHeight = (distance: number) => distance * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) - FLOOR_MARGIN
+// Aim so the floor sits at the bottom of the frame
+const TARGET = new THREE.Vector3(0, DISTANCE * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) - FLOOR_MARGIN, 0)
+// Width of the figure's column at the right edge; the figure stands in its middle
+const FIGURE_WIDTH = { desktop: 0.34, mobile: 0.6 } // fraction of the viewport
 const MIN_POLAR = Math.PI * 0.2
 const MAX_POLAR = Math.PI * 0.62
 const IDLE_SPIN = 0.25 // radians per second; pauses while the visitor drags, then eases back in
@@ -118,11 +120,11 @@ function Figure({
 
 // The page content sits above this canvas, so drags are picked up on the window
 // and only start when the pointer is on the figure and not on text or a link.
-function Orbit({ figureRef, distance }: { figureRef: React.RefObject<THREE.Group | null>; distance: number }) {
-  const { camera, gl } = useThree()
-  const orbit = useRef({ azimuth: 0, polar: Math.PI / 2 - 0.03, held: false, spin: IDLE_SPIN, distance })
+// center: where the figure stands across the (full-width) canvas, 0 = left edge, 1 = right edge
+function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group | null>; center: number }) {
+  const { camera, gl, size } = useThree()
+  const orbit = useRef({ azimuth: 0, polar: Math.PI / 2 - 0.03, held: false, spin: IDLE_SPIN, center })
   const spherical = useMemo(() => new THREE.Spherical(), [])
-  const target = useMemo(() => new THREE.Vector3(), [])
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -241,11 +243,19 @@ function Orbit({ figureRef, distance }: { figureRef: React.RefObject<THREE.Group
     // Stop spinning while held; afterwards ease back up to the idle speed
     o.spin = o.held ? 0 : THREE.MathUtils.damp(o.spin, IDLE_SPIN, 1.5, delta)
     o.azimuth += delta * o.spin
-    o.distance = THREE.MathUtils.damp(o.distance, distance, 4, delta)
-    target.set(0, targetHeight(o.distance), 0)
-    spherical.set(o.distance, o.polar, o.azimuth)
-    camera.position.setFromSpherical(spherical).add(target)
-    camera.lookAt(target)
+    spherical.set(DISTANCE, o.polar, o.azimuth)
+    camera.position.setFromSpherical(spherical).add(TARGET)
+    camera.lookAt(TARGET)
+
+    // Off-centre framing: render a window into a wider virtual view whose middle
+    // is the figure, so the figure lands at `center` across the canvas
+    o.center = THREE.MathUtils.damp(o.center, center, 4, delta)
+    const cam = camera as THREE.PerspectiveCamera
+    const { width: w, height: h } = size
+    const fx = o.center * w
+    const fullWidth = 2 * Math.max(fx, w - fx)
+    cam.aspect = fullWidth / h
+    cam.setViewOffset(fullWidth, h, fullWidth / 2 - fx, 0, w, h)
   })
 
   return null
@@ -263,7 +273,9 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
   const figureRef = useRef<THREE.Group>(null)
   const activeClip = CLIPS.find((c) => c.name === clip)
 
-  const width = mobile ? '60vw' : '34vw'
+  const figureWidth = mobile ? FIGURE_WIDTH.mobile : FIGURE_WIDTH.desktop
+  const width = `${figureWidth * 100}vw`
+  const center = (mobile ? activeClip?.center?.mobile : activeClip?.center?.desktop) ?? 1 - figureWidth / 2
   const height = mobile ? '45dvh' : '85vh'
   const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
   const buttonSize = mobile ? 36 : 40
@@ -289,7 +301,7 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
   return createPortal(
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#0020FF', pointerEvents: 'none' }}>
-        <div style={{ position: 'absolute', right: 0, bottom: strip, width, height: `calc(${height} - ${strip}px)`, ...fade }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: strip, height: `calc(${height} - ${strip}px)`, ...fade }}>
           <Canvas
             flat
             dpr={[1, 2]}
@@ -300,7 +312,7 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
             <Suspense fallback={null}>
               <Figure clip={clip} yaw={activeClip?.yaw ?? 0} onLoaded={handleLoaded} figureRef={figureRef} />
             </Suspense>
-            <Orbit figureRef={figureRef} distance={activeClip?.distance ?? DISTANCE} />
+            <Orbit figureRef={figureRef} center={center} />
           </Canvas>
         </div>
       </div>

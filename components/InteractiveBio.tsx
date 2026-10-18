@@ -182,12 +182,12 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
       style={{
         lineHeight: mobile ? '1.2' : '1.1',
         maxWidth: mobile ? '100%' : '75%',
-        fontSize: mobile ? 'clamp(1.4175rem, 3.15vw + 0.63rem, 1.89rem)' : 'clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem)',
+        fontSize: mobile ? 'clamp(0.99rem, 2.2vw + 0.44rem, 1.32rem)' : 'clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem)',
         marginBottom: mobile ? '8px' : '0',
         ...style,
       }}
     >
-      Hi. I’m Pablo. I’m {article1}{' '}
+      Hi, I’m Pablo, {article1}{' '}
       <span
         ref={phrase1Ref}
         onClick={() => handlePhraseClick()}
@@ -227,18 +227,15 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
         </span>
       </span>
       {' '}
-      who uses design and technology to create light installations, immersive experiences, and interactive art. I also like to ride my bike in New York City, the best city in the world. Also, I’m currently really into micro-lot coffee farming and roasting.
-      <span className="block" style={{ marginTop: '0.75em' }}>
-        Check out some of my favorite projects{' '}
-        <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
-          here
-        </AnimatedLink>{' '}
-        and about my coffee journey{' '}
-        <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">
-          here
-        </AnimatedLink>
-        .
-      </span>
+      creating light installations, immersive experiences, and interactive art. I also ride my bike around New York City, the best city in the world, and I’m deep into micro-lot coffee farming and roasting. See my favorite projects{' '}
+      <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+        here
+      </AnimatedLink>{' '}
+      and my coffee journey{' '}
+      <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+        here
+      </AnimatedLink>
+      .
     </h1>
   )
 }
