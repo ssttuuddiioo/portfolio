@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { gsap } from 'gsap'
 import { AnimatedLink } from './AnimatedLink'
 
-// Clickable role (the only interactive phrase) — "I’m a/an ___ who uses art and technology…"
+// Clickable role (the only interactive phrase) — "Hi, I’m Pablo. I’m a/an ___."
 const array1 = [
   'experiential director',
   'creative technologist',
@@ -187,7 +187,7 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
         ...style,
       }}
     >
-      Hi, I’m Pablo, {article1}{' '}
+      Hi, I’m Pablo. I’m {article1}{' '}
       <span
         ref={phrase1Ref}
         onClick={() => handlePhraseClick()}
@@ -226,16 +226,14 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
           {currentPhrase1}
         </span>
       </span>
-      {' '}
-      creating light installations, immersive experiences, and interactive art. I also ride my bike around New York City, the best city in the world, and I’m deep into micro-lot coffee farming and roasting. See my favorite projects{' '}
-      <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
-        here
-      </AnimatedLink>{' '}
-      and my coffee journey{' '}
-      <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">
-        here
-      </AnimatedLink>
-      .
+      . I create and produce immersive experiences, apps, and interactive art in New York City, the best city in the world. I’m also into long bike rides and currently really deep into a micro-lot coffee project.
+      <span className="block" style={{ marginTop: '0.75em' }}>
+        Check out my{' '}
+        <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+          work
+        </AnimatedLink>
+        .
+      </span>
     </h1>
   )
 }

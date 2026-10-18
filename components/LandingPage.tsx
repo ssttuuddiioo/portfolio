@@ -10,6 +10,9 @@ import { AnimatedLink } from './AnimatedLink'
 import { InteractiveBio } from './InteractiveBio'
 
 const ScanFigure = dynamic(() => import('./ScanFigure'), { ssr: false })
+
+// Desktop width of the About / Contact sections: half the content width minus half the old 60px column gap
+const TEXT_COLUMN_WIDTH = 'calc((100% - 60px) / 2)'
 import { PressHighlight } from '@/types/pressHighlight'
 import { Project } from '@/types/project'
 import { urlFor } from '@/sanity/lib/image'
@@ -49,24 +52,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const contactSectionRef = useRef<HTMLDivElement>(null)
   const contactInitRef = useRef(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const emailRef = useRef<HTMLSpanElement>(null)
 
-  const [emailHighlighted, setEmailHighlighted] = useState(false)
-  const emailHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Play the email link's hover sweep (from the email button by the 3D figure)
-  const highlightEmail = () => {
-    const email = emailRef.current
-    if (email) {
-      const rect = email.getBoundingClientRect()
-      if (rect.top < 0 || rect.bottom > window.innerHeight) {
-        window.scrollTo({ top: 0 })
-      }
-    }
-    setEmailHighlighted(true)
-    if (emailHighlightTimer.current) clearTimeout(emailHighlightTimer.current)
-    emailHighlightTimer.current = setTimeout(() => setEmailHighlighted(false), 2500)
-  }
   const navLinksRef = useRef<HTMLDivElement>(null)
   const heroContainerRef = useRef<HTMLDivElement>(null)
   const workPanelRef = useRef<HTMLDivElement>(null)
@@ -123,8 +109,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     }
   }
 
-  const scrollToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
+  const scrollToContact = (e?: React.MouseEvent<HTMLAnchorElement>) => {
+    e?.preventDefault()
     const wasOpen = openSections.contact
     if (!openSections.contact) {
       setOpenSections(prev => ({ ...prev, contact: true }))
@@ -164,8 +150,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             })
           }
         } else {
-          // Use GSAP for desktop (non-iOS)
-          const rect = sectionElement.getBoundingClientRect()
+          // Use GSAP for desktop (non-iOS); aim at the divider line, past the section's top padding
+          const borderDiv = sectionElement.querySelector('.border-t') as HTMLElement | null
+          const rect = (borderDiv || sectionElement).getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
           const offset = 48
           const maxScroll = document.documentElement.scrollHeight - window.innerHeight
@@ -421,7 +408,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   }, [isWorkOpen])
 
   // Use a constant year to avoid hydration issues
-  const currentYear = 2025
+  const currentYear = new Date().getFullYear()
   
   // Use mobile state only after mount to prevent hydration mismatch
   // Server always renders desktop mode, client updates after mount
@@ -436,7 +423,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="text-white" suppressHydrationWarning>
       {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
-      {hasMounted && <ScanFigure mobile={mobile} onEmailClick={highlightEmail} />}
+      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} />}
 
       {/* Page 1 - Intro */}
       <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
@@ -467,10 +454,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                     @yopablo
                   </span>
                 </AnimatedLink>
-                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }} forceHighlight={emailHighlighted}>
+                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Mail size={mobile ? 18 : 22} strokeWidth={1.5} />
-                    <span ref={emailRef}>artcoffeecomputer@gmail.com</span>
+                    artcoffeecomputer@gmail.com
                   </span>
                 </AnimatedLink>
               </div>
@@ -554,8 +541,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       {/* Work section content moved to /app/work/page.tsx */}
 
       {/* About Section */}
-      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
-        <div className="w-full">
+      <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '100px 32px' : '200px 88px' }}>
+        {/* Desktop: as wide as the left text column, so the divider line stops at the text */}
+        <div className="w-full" style={{ maxWidth: mobile ? '100%' : TEXT_COLUMN_WIDTH }}>
           <div className="border-t border-white" />
           
           <div 
@@ -573,26 +561,27 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             ref={aboutContentRef}
             style={{ opacity: 1 }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '20px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
-              {/* Left Column - Bio content */}
+            <div style={{ marginTop: '40px', paddingBottom: '60px' }}>
+              {/* Bio content */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
                 <p style={{ margin: 0 }}>
-                  I’m Pablo Gnecco, a Colombian-born experiential director and creative technologist based in Brooklyn. I create immersive installations for public art, brand activations, and cultural institutions, working with light, code, and hardware to make physical things that respond to the people around them, always with the belief that the story matters more than the spectacle.
+                  I’m Pablo. I was born in Colombia, grew up in Atlanta, went to art school in Savannah, and have spent the last 14 years in Brooklyn directing large-scale light installations and interactive experiences.
                 </p>
                 <p style={{ margin: 0 }}>
-                  I studied at SCAD in Savannah and have since made work for clients across tech, entertainment, and the cultural world, with projects shown at major festivals. I’ve been an early member and resident artist at a few new media spaces, and over the years I’ve collaborated with art and research institutions through my practice, Studio Studio. These days I’m focused on permanent light installations and new media sculptures, alongside Origen, a specialty coffee company I started to connect roasters directly with Colombian farmers.
+                  I’ve run my studio,{' '}
+                  <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">Studio Studio</AnimatedLink>
+                  , since 2015, when it started at NEW INC. Since then I’ve made work for brands, entertainment networks, and cultural institutions, with projects shown at major festivals and art fairs. Lately I’m most excited about permanent light installations and new media sculpture.
                 </p>
                 <p style={{ margin: 0 }}>
-                  When I’m not in the studio, I’m usually on a bike, in the water, or carrying a camera around. I’m currently open to new work, including consulting and freelance projects, so if you’re building something interesting, I’d like to hear about it.
+                  I also run{' '}
+                  <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">Origen</AnimatedLink>
+                  , a coffee company that buys directly from farmers in Colombia. Our coffee comes from Finca Bellavista in Charalá, Santander.
+                </p>
+                <p style={{ margin: 0 }}>
+                  Outside the studio I’m usually on a bike, in the water, or carrying a camera. I’m open to new work, including consulting and freelance. If you’re building something interesting, write me. I’d like to hear about it.
                 </p>
               </div>
 
-              {/* Right Column - Bullet point on desktop, hidden on mobile */}
-              {!mobile && (
-                <div>
-                  <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%' }} />
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -913,8 +902,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       )}
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '0 32px' : '0 88px' }}>
-        <div className="w-full">
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '100px 32px' : '200px 88px' }}>
+        {/* Desktop: as wide as the left text column, so the divider line stops at the text */}
+        <div className="w-full" style={{ maxWidth: mobile ? '100%' : TEXT_COLUMN_WIDTH }}>
           <div className="border-t border-white" />
           
           <div 
@@ -958,16 +948,15 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 opacity: 1 !important;
               }
             `}} />
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: mobile ? '32px' : '60px', marginTop: '40px', paddingBottom: '60px' }}>
-              {/* Left Column - CTA on desktop, shows above form on mobile */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '32px' : '40px', marginTop: '40px', paddingBottom: '60px' }}>
+              {/* CTA under the heading */}
               <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
-                <div style={{ width: '8px', height: '8px', backgroundColor: 'white', borderRadius: '50%', marginBottom: '24px' }} />
-                <p style={{ margin: 0, maxWidth: mobile ? '100%' : '280px' }}>
+                <p style={{ margin: 0 }}>
                   Drop me a line, would love to hear from you about your next project or collaboration.
                 </p>
               </div>
 
-              {/* Right Column - Contact Form */}
+              {/* Contact Form */}
               <div>
                 <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
                   {/* Name Field */}
@@ -1090,7 +1079,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         flexDirection: 'column',
       }}>
         <div className="w-full" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-          <div className="border-t border-white" />
           
           {/* Footer wordmark */}
           <div style={{
@@ -1106,7 +1094,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               width="100%"
               role="img"
               aria-label="YOPABLO"
-              style={{ display: 'block', overflow: 'visible', marginTop: '300px' }}
+              style={{ display: 'block', overflow: 'visible', marginTop: '350px', marginBottom: '150px' }}
             >
               <text
                 x="0"
@@ -1128,22 +1116,35 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div className="pb-safe" style={{ 
             marginTop: 'auto',
             paddingTop: '20px',
-            paddingBottom: mobile ? '40px' : '60px',
+            // At the end of the page the Origen dot lines up with the fixed 3D clip
+            // buttons (their row is centred 28px / 36px above the bottom of the screen)
+            paddingBottom: mobile ? '10px' : '16px',
             borderTop: '1px solid rgba(255,255,255,0.15)',
-            display: 'flex',
-            flexDirection: mobile ? 'column' : 'row',
-            justifyContent: mobile ? 'center' : 'space-between',
+            // Desktop: three columns so the copyright sits dead centre: Origen dot | © | (Work)
+            // Mobile: copyright on its own line above, clear of the buttons
+            display: 'grid',
+            gridTemplateColumns: mobile ? '1fr' : '1fr auto 1fr',
+            rowGap: '16px',
             alignItems: 'center',
-            gap: mobile ? '16px' : '0',
             fontSize: '13px'
           }}>
-            <div style={{ opacity: 0.5 }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {/* Origen coffee — same size as the 3D clip buttons */}
+            <a
+              href="https://origen.nyc"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Origen coffee"
+              title="Origen"
+              className="origen-dot"
+              style={{ display: 'block', justifySelf: 'start', width: mobile ? '36px' : '40px', height: mobile ? '36px' : '40px', borderRadius: '50%', backgroundColor: '#FF6700' }}
+            />
+
+            <div style={{ opacity: 0.5, textAlign: 'center', order: mobile ? -1 : 0 }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
+
+            <div style={{ display: mobile ? 'none' : 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px' }}>
               {showSecondarySections && (
                 <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
               )}
-              <AnimatedLink href="#" onClick={(e: React.MouseEvent) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{ opacity: 0.6 }}>Back to Top</AnimatedLink>
             </div>
           </div>
         </div>

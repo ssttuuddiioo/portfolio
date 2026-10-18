@@ -13,14 +13,14 @@ const MODEL_URL = '/models/pablo-moves.glb'
 // rigged in Mixamo; each clip is a named animation in the GLB, played in place
 // Clips with their own button in the row
 const CLIPS: { name: string; label: string; Icon: LucideIcon; yaw?: number; center?: { desktop: number; mobile: number } }[] = [
-  { name: 'pacing', label: 'On the phone', Icon: Phone },
   // Turn the figure (degrees around its vertical axis) while this clip plays
+  { name: 'pacing', label: 'On the phone', Icon: Phone, yaw: 150 },
   { name: 'walking', label: 'Walking', Icon: Footprints, yaw: 130 },
   { name: 'dancing', label: 'Dancing', Icon: Music },
   // Lying flat is wider than standing tall, so slide the figure left to keep it on screen
-  { name: 'laying', label: 'Lying down', Icon: Bed, center: { desktop: 0.66, mobile: 0.5 } },
+  { name: 'laying', label: 'Lying down', Icon: Bed, yaw: 40, center: { desktop: 0.66, mobile: 0.5 } },
 ]
-// Played by the email button rather than its own icon
+// Played by the contact (email) button rather than its own icon
 const EMAIL_CLIP = 'typing'
 const CROSSFADE = 0.5 // seconds
 const DISTANCE = 4
@@ -104,11 +104,14 @@ function Figure({
     }
   }, [actions, clip])
 
-  // Ease into the clip's facing direction alongside the crossfade
+  // Ease into the clip's facing direction alongside the crossfade (start already turned on load)
+  const placed = useRef(false)
   useFrame((_, delta) => {
     const group = figureRef.current
     if (!group) return
-    group.rotation.y = THREE.MathUtils.damp(group.rotation.y, THREE.MathUtils.degToRad(yaw), 6, delta)
+    const facing = THREE.MathUtils.degToRad(yaw)
+    group.rotation.y = placed.current ? THREE.MathUtils.damp(group.rotation.y, facing, 6, delta) : facing
+    placed.current = true
   })
 
   return (
@@ -263,11 +266,29 @@ function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group |
 
 interface ScanFigureProps {
   mobile?: boolean
-  onEmailClick?: () => void
+  onContactClick?: () => void
 }
 
-export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureProps) {
+export default function ScanFigure({ mobile = false, onContactClick }: ScanFigureProps) {
   const [loaded, setLoaded] = useState(false)
+  const [typing, setTyping] = useState(false)
+
+  // On touch screens, get the pinned buttons out of the way while the keyboard is up
+  useEffect(() => {
+    if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
+    const isField = (el: EventTarget | null) =>
+      el instanceof HTMLElement && (el.matches('input, textarea, select') || el.isContentEditable)
+    const onFocusIn = (e: FocusEvent) => setTyping(isField(e.target))
+    const onFocusOut = (e: FocusEvent) => {
+      if (!isField(e.relatedTarget)) setTyping(false)
+    }
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
+    return () => {
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
+    }
+  }, [])
   const [clip, setClip] = useState(CLIPS[0].name)
   const handleLoaded = useCallback(() => setLoaded(true), [])
   const figureRef = useRef<THREE.Group>(null)
@@ -278,6 +299,8 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
   const center = (mobile ? activeClip?.center?.mobile : activeClip?.center?.desktop) ?? 1 - figureWidth / 2
   const height = mobile ? '45dvh' : '85vh'
   const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
+  // Desktop: lower the figure into the strip (the floor margin keeps its feet clear of the buttons)
+  const figureBottom = mobile ? strip : strip - 25
   const buttonSize = mobile ? 36 : 40
   const fade: React.CSSProperties = { opacity: loaded ? 1 : 0, transition: 'opacity 0.8s ease' }
   const buttonStyle = (active: boolean): React.CSSProperties => ({
@@ -301,7 +324,7 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
   return createPortal(
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#0020FF', pointerEvents: 'none' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: strip, height: `calc(${height} - ${strip}px)`, ...fade }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: figureBottom, height: `calc(${height} - ${strip}px)`, ...fade }}>
           <Canvas
             flat
             dpr={[1, 2]}
@@ -317,17 +340,27 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
         </div>
       </div>
 
-      <div style={{ position: 'fixed', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2,
+          pointerEvents: 'none',
+          visibility: typing ? 'hidden' : 'visible',
+          opacity: typing ? 0 : 1,
+          transition: 'opacity 0.2s ease, visibility 0.2s',
+        }}
+      >
         <div style={{ position: 'absolute', right: 0, bottom: 0, width, height: strip, ...fade }}>
-          {/* Row of clip buttons, ending under the figure's feet */}
+          {/* Row of clip buttons, centred under the figure */}
           <div
             role="group"
             aria-label="Animations and contact"
             style={{
               position: 'absolute',
-              right: '50%',
+              left: '50%',
               top: '50%',
-              transform: 'translateY(-50%)',
+              transform: 'translate(-50%, -50%)',
               display: 'flex',
               gap: 8,
               pointerEvents: 'auto',
@@ -350,15 +383,15 @@ export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureP
                 </button>
               )
             })}
-            {onEmailClick && (
+            {onContactClick && (
               <button
                 type="button"
-                title="Email me"
-                aria-label="Email me"
+                title="Contact me"
+                aria-label="Contact me"
                 aria-pressed={clip === EMAIL_CLIP}
                 onClick={() => {
                   setClip(EMAIL_CLIP)
-                  onEmailClick()
+                  onContactClick()
                 }}
                 className="scan-clip-button"
                 style={{ ...buttonStyle(clip === EMAIL_CLIP), marginLeft: mobile ? 4 : 8 }}
