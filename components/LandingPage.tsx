@@ -444,7 +444,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         <div className="flex-1 flex flex-col" style={{ minHeight: 0, height: '100%', justifyContent: 'space-between' }}>
           {/* Top Section - Large Heading */}
           <div style={{ 
-            paddingTop: mobile ? '0' : '0', 
+            paddingTop: mobile ? '20px' : '40px', // matches paddingLeft so the text sits as far from the top as from the left 
             paddingLeft: mobile ? '20px' : '40px', 
             paddingRight: mobile ? '20px' : '40px', 
             flex: mobile ? '1 1 auto' : '1',
