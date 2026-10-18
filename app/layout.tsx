@@ -1,17 +1,10 @@
-import type { Metadata, Viewport } from 'next'
+import type { Metadata } from 'next'
 import './globals.css'
 import { SmoothScroll } from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
   title: 'YOPABLO',
   description: 'Pablo Gnecco — experiential director and creative technologist',
-}
-
-// Android Chrome: shrink the page to fit above the on-screen keyboard instead of covering it
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({

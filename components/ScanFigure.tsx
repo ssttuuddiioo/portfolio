@@ -297,7 +297,7 @@ export default function ScanFigure({ mobile = false, onContactClick }: ScanFigur
   const figureWidth = mobile ? FIGURE_WIDTH.mobile : FIGURE_WIDTH.desktop
   const width = `${figureWidth * 100}vw`
   const center = (mobile ? activeClip?.center?.mobile : activeClip?.center?.desktop) ?? 1 - figureWidth / 2
-  const height = mobile ? '45dvh' : '85vh'
+  const height = mobile ? '45svh' : '85vh'
   const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
   // Desktop: lower the figure into the strip (the floor margin keeps its feet clear of the buttons)
   const figureBottom = mobile ? strip : strip - 25

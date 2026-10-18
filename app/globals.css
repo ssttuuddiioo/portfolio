@@ -101,11 +101,13 @@ a:focus {
     line-height: 1.2 !important;
   }
   
-  /* Ensure hero container fits viewport on mobile */
+  /* Hero fills one screen on mobile. --hero-h is the screen height locked at load
+     (see LandingPage), so the on-screen keyboard and collapsing browser bars can't
+     resize it and shove the content below (like the contact form) up the page. */
   @media (max-width: 899px) {
     .hero-container {
-      height: 100dvh !important;
-      max-height: 100dvh !important;
+      height: var(--hero-h, 100svh) !important;
+      max-height: var(--hero-h, 100svh) !important;
       overflow: hidden !important;
     }
   }

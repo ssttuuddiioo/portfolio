@@ -238,10 +238,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   useEffect(() => {
     setHasMounted(true)
+    let lockedWidth = 0
     const checkBreakpoints = () => {
       const width = window.innerWidth
       setIsMobile(width < 900)
       setIsMedium(width >= 900 && width < 1500)
+      // Lock the hero to the screen height; only re-measure when the width changes
+      // (rotation, window resize), never for keyboard or browser-bar height changes
+      if (width !== lockedWidth) {
+        lockedWidth = width
+        document.documentElement.style.setProperty('--hero-h', `${window.innerHeight}px`)
+      }
     }
     
     checkBreakpoints()
@@ -429,9 +436,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
         position: 'relative', 
         padding: mobile ? '12px' : '48px',
-        height: mobile ? '100dvh' : 'auto',
-        minHeight: mobile ? '100dvh' : '100vh',
-        maxHeight: mobile ? '100dvh' : 'none',
+        height: mobile ? 'var(--hero-h, 100svh)' : 'auto',
+        minHeight: mobile ? 'var(--hero-h, 100svh)' : '100vh',
+        maxHeight: mobile ? 'var(--hero-h, 100svh)' : 'none',
         overflow: mobile ? 'hidden' : 'visible'
       }}>
         <div className="flex-1 flex flex-col" style={{ minHeight: 0, height: '100%', justifyContent: 'space-between' }}>
