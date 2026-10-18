@@ -47,6 +47,19 @@ export function AnimatedLink({ href, children, target, rel, className = '', styl
         duration: 0.3,
         ease: 'power2.inOut',
       })
+    } else {
+      // Release: sweep the highlight back off
+      gsap.to(highlight, {
+        scaleX: 0,
+        duration: 0.4,
+        ease: 'power2.inOut',
+      })
+
+      gsap.to(text, {
+        color: '#FFFFFF',
+        duration: 0.3,
+        ease: 'power2.inOut',
+      })
     }
   }, [forceHighlight])
 

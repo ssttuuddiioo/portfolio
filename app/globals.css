@@ -18,7 +18,7 @@ html,
 body {
   width: 100%;
   min-height: 100%;
-  background: #0066FF;
+  background: #0020FF;
   color: #fff;
 }
 
@@ -46,6 +46,13 @@ svg {
 ::-moz-selection {
   background: #FDF843;
   color: #0020FF;
+}
+
+/* 3D scan clip buttons */
+.scan-clip-button:hover {
+  background: #FDF843 !important;
+  border-color: #FDF843 !important;
+  color: #0020FF !important;
 }
 
 /* Force all links to be white by default */

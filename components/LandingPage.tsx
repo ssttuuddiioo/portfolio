@@ -49,6 +49,24 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const contactSectionRef = useRef<HTMLDivElement>(null)
   const contactInitRef = useRef(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const emailRef = useRef<HTMLSpanElement>(null)
+
+  const [emailHighlighted, setEmailHighlighted] = useState(false)
+  const emailHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Play the email link's hover sweep (from the email button by the 3D figure)
+  const highlightEmail = () => {
+    const email = emailRef.current
+    if (email) {
+      const rect = email.getBoundingClientRect()
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        window.scrollTo({ top: 0 })
+      }
+    }
+    setEmailHighlighted(true)
+    if (emailHighlightTimer.current) clearTimeout(emailHighlightTimer.current)
+    emailHighlightTimer.current = setTimeout(() => setEmailHighlighted(false), 2500)
+  }
   const navLinksRef = useRef<HTMLDivElement>(null)
   const heroContainerRef = useRef<HTMLDivElement>(null)
   const workPanelRef = useRef<HTMLDivElement>(null)
@@ -418,7 +436,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="text-white" suppressHydrationWarning>
       {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
-      {hasMounted && <ScanFigure mobile={mobile} />}
+      {hasMounted && <ScanFigure mobile={mobile} onEmailClick={highlightEmail} />}
 
       {/* Page 1 - Intro */}
       <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
@@ -449,10 +467,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                     @yopablo
                   </span>
                 </AnimatedLink>
-                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
+                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }} forceHighlight={emailHighlighted}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Mail size={mobile ? 18 : 22} strokeWidth={1.5} />
-                    artcoffeecomputer@gmail.com
+                    <span ref={emailRef}>artcoffeecomputer@gmail.com</span>
                   </span>
                 </AnimatedLink>
               </div>

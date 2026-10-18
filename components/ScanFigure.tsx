@@ -1,19 +1,36 @@
 'use client'
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
+import { Bed, Footprints, Mail, Music, Phone, type LucideIcon } from 'lucide-react'
 
-const MODEL_URL = '/models/pablo.glb'
+const MODEL_URL = '/models/pablo-moves.glb'
 
-// Scan is in metres, +Y up, feet at 0, facing +Z (XR Brooklyn 2026 capture)
-const TARGET = new THREE.Vector3(0, 0.94, 0)
+// Scan is in metres, +Y up, feet at 0, facing +Z (XR Brooklyn 2026 capture),
+// rigged in Mixamo; each clip is a named animation in the GLB, played in place
+// Clips with their own button in the row
+const CLIPS: { name: string; label: string; Icon: LucideIcon; distance?: number; yaw?: number }[] = [
+  { name: 'pacing', label: 'On the phone', Icon: Phone },
+  // Turn the figure (degrees around its vertical axis) while this clip plays
+  { name: 'walking', label: 'Walking', Icon: Footprints, yaw: 130 },
+  { name: 'dancing', label: 'Dancing', Icon: Music },
+  // Lying flat is wider than standing tall, so pull the camera back
+  { name: 'laying', label: 'Lying down', Icon: Bed, distance: 6 },
+]
+// Played by the email button rather than its own icon
+const EMAIL_CLIP = 'typing'
+const CROSSFADE = 0.5 // seconds
 const DISTANCE = 4
+const FOV = 30
+const FLOOR_MARGIN = 0.13 // metres of floor visible below the feet
+// Aim so the floor stays at the bottom of the frame at any camera distance
+const targetHeight = (distance: number) => distance * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) - FLOOR_MARGIN
 const MIN_POLAR = Math.PI * 0.2
 const MAX_POLAR = Math.PI * 0.62
-const IDLE_SPIN = 0.25 // radians per second until the visitor drags
+const IDLE_SPIN = 0.25 // radians per second; pauses while the visitor drags, then eases back in
 
 const INTERACTIVE = 'a, button, input, textarea, select, label, [role="button"]'
 
@@ -44,39 +61,68 @@ function isOverText(x: number, y: number) {
   )
 }
 
-function Figure({ onLoaded, figureRef }: { onLoaded: () => void; figureRef: React.RefObject<THREE.Group | null> }) {
+function Figure({
+  clip,
+  yaw,
+  onLoaded,
+  figureRef,
+}: {
+  clip: string
+  yaw: number
+  onLoaded: () => void
+  figureRef: React.RefObject<THREE.Group | null>
+}) {
   // useGLTF(url, draco, meshopt) — model is meshopt-compressed
-  const { scene } = useGLTF(MODEL_URL, false, true)
+  const { scene, animations } = useGLTF(MODEL_URL, false, true)
+  const { actions } = useAnimations(animations, figureRef)
 
   // Photo-scanned texture already has lighting baked in, so render it unlit
-  const figure = useMemo(() => {
-    const root = scene.clone(true)
-    root.traverse((obj) => {
+  useMemo(() => {
+    scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh) return
       const source = mesh.material as THREE.MeshStandardMaterial
       mesh.material = new THREE.MeshBasicMaterial({ map: source.map, toneMapped: false })
+      // Skinned bounds are computed in the bind pose, so don't let culling hide the animated figure
+      mesh.frustumCulled = false
     })
-    return root
   }, [scene])
 
   useEffect(() => {
     onLoaded()
-  }, [figure, onLoaded])
+  }, [scene, onLoaded])
+
+  // Crossfade into the selected clip; the cleanup fades out the previous one
+  useEffect(() => {
+    const action = actions[clip]
+    if (!action) return
+    action.reset().fadeIn(CROSSFADE).play()
+    return () => {
+      action.fadeOut(CROSSFADE)
+    }
+  }, [actions, clip])
+
+  // Ease into the clip's facing direction alongside the crossfade
+  useFrame((_, delta) => {
+    const group = figureRef.current
+    if (!group) return
+    group.rotation.y = THREE.MathUtils.damp(group.rotation.y, THREE.MathUtils.degToRad(yaw), 6, delta)
+  })
 
   return (
     <group ref={figureRef}>
-      <primitive object={figure} />
+      <primitive object={scene} />
     </group>
   )
 }
 
 // The page content sits above this canvas, so drags are picked up on the window
 // and only start when the pointer is on the figure and not on text or a link.
-function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }) {
+function Orbit({ figureRef, distance }: { figureRef: React.RefObject<THREE.Group | null>; distance: number }) {
   const { camera, gl } = useThree()
-  const orbit = useRef({ azimuth: 0, polar: Math.PI / 2 - 0.03, interacted: false })
+  const orbit = useRef({ azimuth: 0, polar: Math.PI / 2 - 0.03, held: false, spin: IDLE_SPIN, distance })
   const spherical = useMemo(() => new THREE.Spherical(), [])
+  const target = useMemo(() => new THREE.Vector3(), [])
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -101,7 +147,6 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
 
     const rotate = (dx: number, dy: number) => {
       const o = orbit.current
-      o.interacted = true
       o.azimuth -= dx * 0.008
       o.polar = THREE.MathUtils.clamp(o.polar - dy * 0.005, MIN_POLAR, MAX_POLAR)
     }
@@ -116,6 +161,7 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
       if (!canGrab(e.clientX, e.clientY, e.target)) return
       e.preventDefault() // stop text selection from starting
       dragging = true
+      orbit.current.held = true
       lastX = e.clientX
       lastY = e.clientY
       setCursor('grabbing')
@@ -133,6 +179,7 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
     const onPointerUp = () => {
       if (!dragging) return
       dragging = false
+      orbit.current.held = false
       setCursor('')
     }
 
@@ -158,12 +205,14 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
         }
       }
       e.preventDefault()
+      orbit.current.held = true
       rotate(t.clientX - lastX, 0)
       lastX = t.clientX
       lastY = t.clientY
     }
     const onTouchEnd = () => {
       touchStart = null
+      orbit.current.held = false
     }
 
     window.addEventListener('pointerdown', onPointerDown)
@@ -173,6 +222,7 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
     window.addEventListener('touchstart', onTouchStart, { passive: true })
     window.addEventListener('touchmove', onTouchMove, { passive: false })
     window.addEventListener('touchend', onTouchEnd)
+    window.addEventListener('touchcancel', onTouchEnd)
     return () => {
       window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('pointermove', onPointerMove)
@@ -181,55 +231,133 @@ function Orbit({ figureRef }: { figureRef: React.RefObject<THREE.Group | null> }
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('touchcancel', onTouchEnd)
       setCursor('')
     }
   }, [camera, gl, figureRef])
 
   useFrame((_, delta) => {
     const o = orbit.current
-    if (!o.interacted) o.azimuth += delta * IDLE_SPIN
-    spherical.set(DISTANCE, o.polar, o.azimuth)
-    camera.position.setFromSpherical(spherical).add(TARGET)
-    camera.lookAt(TARGET)
+    // Stop spinning while held; afterwards ease back up to the idle speed
+    o.spin = o.held ? 0 : THREE.MathUtils.damp(o.spin, IDLE_SPIN, 1.5, delta)
+    o.azimuth += delta * o.spin
+    o.distance = THREE.MathUtils.damp(o.distance, distance, 4, delta)
+    target.set(0, targetHeight(o.distance), 0)
+    spherical.set(o.distance, o.polar, o.azimuth)
+    camera.position.setFromSpherical(spherical).add(target)
+    camera.lookAt(target)
   })
 
   return null
 }
 
-export default function ScanFigure({ mobile = false }: { mobile?: boolean }) {
+interface ScanFigureProps {
+  mobile?: boolean
+  onEmailClick?: () => void
+}
+
+export default function ScanFigure({ mobile = false, onEmailClick }: ScanFigureProps) {
   const [loaded, setLoaded] = useState(false)
+  const [clip, setClip] = useState(CLIPS[0].name)
   const handleLoaded = useCallback(() => setLoaded(true), [])
   const figureRef = useRef<THREE.Group>(null)
+  const activeClip = CLIPS.find((c) => c.name === clip)
+
+  const width = mobile ? '60vw' : '34vw'
+  const height = mobile ? '45dvh' : '85vh'
+  const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
+  const buttonSize = mobile ? 36 : 40
+  const fade: React.CSSProperties = { opacity: loaded ? 1 : 0, transition: 'opacity 0.8s ease' }
+  const buttonStyle = (active: boolean): React.CSSProperties => ({
+    width: buttonSize,
+    height: buttonSize,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    border: '1px solid',
+    borderColor: active ? '#FDF843' : 'rgba(255, 255, 255, 0.5)',
+    background: active ? '#FDF843' : 'transparent',
+    color: active ? '#0020FF' : '#FFFFFF',
+    transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+  })
 
   // Rendered into <body>, outside the smooth-scroll wrapper, so it stays pinned
-  // to the viewport while the page content scrolls over it.
+  // to the viewport while the page content scrolls over it. The figure sits
+  // behind the page; the clip buttons sit above it so they stay clickable.
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#0020FF', pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          right: 0,
-          bottom: 0,
-          width: mobile ? '60vw' : '34vw',
-          height: mobile ? '45dvh' : '85vh',
-          opacity: loaded ? 1 : 0,
-          transition: 'opacity 0.8s ease',
-        }}
-      >
-        <Canvas
-          flat
-          dpr={[1, 2]}
-          camera={{ position: [0, 1.05, DISTANCE], fov: 30, near: 0.1, far: 50 }}
-          gl={{ alpha: true, antialias: true }}
-          style={{ pointerEvents: 'none' }}
-        >
-          <Suspense fallback={null}>
-            <Figure onLoaded={handleLoaded} figureRef={figureRef} />
-          </Suspense>
-          <Orbit figureRef={figureRef} />
-        </Canvas>
+    <>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#0020FF', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', right: 0, bottom: strip, width, height: `calc(${height} - ${strip}px)`, ...fade }}>
+          <Canvas
+            flat
+            dpr={[1, 2]}
+            camera={{ position: [0, 1.05, DISTANCE], fov: FOV, near: 0.1, far: 50 }}
+            gl={{ alpha: true, antialias: true }}
+            style={{ pointerEvents: 'none' }}
+          >
+            <Suspense fallback={null}>
+              <Figure clip={clip} yaw={activeClip?.yaw ?? 0} onLoaded={handleLoaded} figureRef={figureRef} />
+            </Suspense>
+            <Orbit figureRef={figureRef} distance={activeClip?.distance ?? DISTANCE} />
+          </Canvas>
+        </div>
       </div>
-    </div>,
+
+      <div style={{ position: 'fixed', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', right: 0, bottom: 0, width, height: strip, ...fade }}>
+          {/* Row of clip buttons, ending under the figure's feet */}
+          <div
+            role="group"
+            aria-label="Animations and contact"
+            style={{
+              position: 'absolute',
+              right: '50%',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              gap: 8,
+              pointerEvents: 'auto',
+            }}
+          >
+            {CLIPS.map(({ name, label, Icon }) => {
+              const active = clip === name
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={active}
+                  onClick={() => setClip(name)}
+                  className="scan-clip-button"
+                  style={buttonStyle(active)}
+                >
+                  <Icon size={mobile ? 16 : 18} strokeWidth={1.5} />
+                </button>
+              )
+            })}
+            {onEmailClick && (
+              <button
+                type="button"
+                title="Email me"
+                aria-label="Email me"
+                aria-pressed={clip === EMAIL_CLIP}
+                onClick={() => {
+                  setClip(EMAIL_CLIP)
+                  onEmailClick()
+                }}
+                className="scan-clip-button"
+                style={{ ...buttonStyle(clip === EMAIL_CLIP), marginLeft: mobile ? 4 : 8 }}
+              >
+                <Mail size={mobile ? 16 : 18} strokeWidth={1.5} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>,
     document.body
   )
 }
