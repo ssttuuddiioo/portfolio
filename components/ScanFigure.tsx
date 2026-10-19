@@ -28,8 +28,8 @@ const FOV = 30
 const FLOOR_MARGIN = 0.13 // metres of floor visible below the feet
 // Aim so the floor sits at the bottom of the frame
 const TARGET = new THREE.Vector3(0, DISTANCE * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) - FLOOR_MARGIN, 0)
-// Width of the figure's column at the right edge; the figure stands in its middle
-const FIGURE_WIDTH = { desktop: 0.34, mobile: 0.6 } // fraction of the viewport
+// Width of the figure's column at the right edge (full width on mobile, so the figure is centred)
+const FIGURE_WIDTH = { desktop: 0.34, mobile: 1 } // fraction of the viewport
 const MIN_POLAR = Math.PI * 0.2
 const MAX_POLAR = Math.PI * 0.62
 const IDLE_SPIN = 0.25 // radians per second; pauses while the visitor drags, then eases back in
@@ -297,7 +297,7 @@ export default function ScanFigure({ mobile = false, onContactClick }: ScanFigur
   const figureWidth = mobile ? FIGURE_WIDTH.mobile : FIGURE_WIDTH.desktop
   const width = `${figureWidth * 100}vw`
   const center = (mobile ? activeClip?.center?.mobile : activeClip?.center?.desktop) ?? 1 - figureWidth / 2
-  const height = mobile ? '45svh' : '85vh'
+  const height = mobile ? 'calc(67.5svh - 28px)' : '85vh' // mobile: 1.5x the old 45svh figure (canvas = height minus the button strip)
   const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
   // Desktop: lower the figure into the strip (the floor margin keeps its feet clear of the buttons)
   const figureBottom = mobile ? strip : strip - 25
