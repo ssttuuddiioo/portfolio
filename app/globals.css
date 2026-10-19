@@ -48,6 +48,19 @@ svg {
   color: #0020FF;
 }
 
+/* Phones: the landing (3D figure + YOPABLO) and the rest of the page are snap areas,
+   so the first scroll from the landing glides to the bio. The rest-of-page area is
+   taller than the screen, so scrolling inside it stays free. */
+@media (max-width: 899px) and (hover: none) and (pointer: coarse) {
+  html {
+    scroll-snap-type: y mandatory;
+  }
+
+  .snap-start {
+    scroll-snap-align: start;
+  }
+}
+
 /* 3D scan clip buttons */
 .scan-clip-button:hover {
   background: #FDF843 !important;

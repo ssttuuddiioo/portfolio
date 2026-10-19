@@ -8,8 +8,29 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { AnimatedLink } from './AnimatedLink'
 import { InteractiveBio } from './InteractiveBio'
+import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_STRIP } from './scanLayout'
 
 const ScanFigure = dynamic(() => import('./ScanFigure'), { ssr: false })
+
+// The big YOPABLO wordmark, stretched to the full width it's given
+function Wordmark({ style }: { style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 1000 160" width="100%" role="img" aria-label="YOPABLO" style={{ display: 'block', overflow: 'visible', ...style }}>
+      <text
+        x="0"
+        y="140"
+        textLength="1000"
+        lengthAdjust="spacingAndGlyphs"
+        fontSize="175"
+        fontWeight="700"
+        fill="#FFFFFF"
+        style={{ fontFamily: 'inherit' }}
+      >
+        YOPABLO
+      </text>
+    </svg>
+  )
+}
 
 // Desktop width of the About / Contact sections: half the content width minus half the old 60px column gap
 const TEXT_COLUMN_WIDTH = 'calc((100% - 60px) / 2)'
@@ -167,6 +188,18 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         }
       }, delay)
     }
+  }
+
+  // Clicking Dancing, from anywhere on the page, glides to the next section after the landing:
+  // phones open on the YOPABLO landing, so they go to the "Hi, I'm Pablo" bio; desktop opens
+  // on the bio, so it goes to About (its divider line, past the section's top padding)
+  const handleClipChange = (clip: string) => {
+    if (clip !== 'dancing') return
+    const target = mobile ? heroContainerRef.current : aboutSectionRef.current?.querySelector('.border-t')
+    if (!target) return
+    const offset = mobile ? 0 : 48
+    const top = target.getBoundingClientRect().top + window.scrollY - offset
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
   }
 
   const showComingSoon = (e: React.MouseEvent<HTMLAnchorElement>, message: string) => {
@@ -430,7 +463,28 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="text-white" suppressHydrationWarning>
       {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
-      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} />}
+      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} onClipChange={handleClipChange} />}
+
+      {/* Mobile landing: just the pinned 3D figure with YOPABLO across it, sitting
+          right above the clip buttons; the bio follows on scroll. On phones the landing
+          and the rest of the page are scroll-snap areas, so the first scroll glides
+          straight to the bio (see .snap-start in globals.css) */}
+      {mobile && (
+        <div className="snap-start" style={{ position: 'relative', height: 'var(--hero-h, 100svh)' }}>
+          <Wordmark
+            style={{
+              position: 'absolute',
+              left: '32px',
+              width: 'calc(100% - 64px)',
+              // top edge of the buttons, plus a small gap
+              bottom: `${SCAN_BUTTONS_LIFT_MOBILE + (SCAN_STRIP.mobile + SCAN_BUTTON_SIZE.mobile) / 2 + 12}px`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Everything after the landing, as one snap area that scrolls freely inside */}
+      <div className={mobile ? 'snap-start' : undefined}>
 
       {/* Page 1 - Intro */}
       <div ref={heroContainerRef} className="flex flex-col pb-safe hero-container" style={{ 
@@ -453,8 +507,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           }}>
             <div ref={titleRef}>
               <InteractiveBio mobile={mobile} />
-              {/* Contact links below bio */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: mobile ? '8px 20px' : '8px 32px', marginTop: mobile ? '20px' : '32px', fontSize: mobile ? '15px' : '18px' }}>
+              {/* Contact links below bio (desktop; mobile has them at the bottom of the page) */}
+              {!mobile && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 32px', marginTop: '32px', fontSize: '18px' }}>
                 <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Instagram size={mobile ? 18 : 22} strokeWidth={1.5} />
@@ -468,6 +523,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                   </span>
                 </AnimatedLink>
               </div>
+              )}
             </div>
           </div>
           
@@ -579,14 +635,19 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                   <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">Studio Studio</AnimatedLink>
                   , since 2015, when it started at NEW INC. Since then I’ve made work for brands, entertainment networks, and cultural institutions, with projects shown at major festivals and art fairs. Lately I’m most excited about permanent light installations and new media sculpture.
                 </p>
-                <p style={{ margin: 0 }}>
-                  I also run{' '}
-                  <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">Origen</AnimatedLink>
-                  , a coffee company that buys directly from farmers in Colombia. Our coffee comes from Finca Bellavista in Charalá, Santander.
-                </p>
-                <p style={{ margin: 0 }}>
-                  Outside the studio I’m usually on a bike, in the water, or carrying a camera. I’m open to new work, including consulting and freelance. If you’re building something interesting, write me. I’d like to hear about it.
-                </p>
+                {/* Desktop only: mobile keeps the About text to the first two paragraphs */}
+                {!mobile && (
+                  <>
+                  <p style={{ margin: 0 }}>
+                    I also run{' '}
+                    <AnimatedLink href="https://origen.nyc" target="_blank" rel="noopener noreferrer" className="underline">Origen</AnimatedLink>
+                    , a coffee company that buys directly from farmers in Colombia. Our coffee comes from Finca Bellavista in Charalá, Santander.
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Outside the studio I’m usually on a bike, in the water, or carrying a camera. I’m open to new work, including consulting and freelance. If you’re building something interesting, write me. I’d like to hear about it.
+                  </p>
+                  </>
+                )}
               </div>
 
             </div>
@@ -909,7 +970,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       )}
 
       {/* Contact Section */}
-      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '100px 32px' : '200px 88px' }}>
+      <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '48px 32px' : '200px 88px' }}>
         {/* Desktop: as wide as the left text column, so the divider line stops at the text */}
         <div className="w-full" style={{ maxWidth: mobile ? '100%' : TEXT_COLUMN_WIDTH }}>
           <div className="border-t border-white" />
@@ -917,7 +978,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div 
             onClick={() => toggleAndScrollToSection('contact', contactSectionRef)}
             className="cursor-pointer py-8 flex items-center justify-between"
-            style={{ paddingTop: '24px', paddingBottom: '24px' }}
+            style={{ paddingTop: mobile ? '16px' : '24px', paddingBottom: mobile ? '16px' : '24px' }}
           >
             <h2 style={{ fontSize: mobile ? '24px' : '32px', fontWeight: '700', letterSpacing: '-0.01em', margin: 0 }}>Contact</h2>
             <span style={{ fontSize: mobile ? '32px' : '40px', fontWeight: '300', lineHeight: '1' }}>
@@ -955,17 +1016,17 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 opacity: 1 !important;
               }
             `}} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '32px' : '40px', marginTop: '40px', paddingBottom: '60px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '20px' : '40px', marginTop: mobile ? '8px' : '40px', paddingBottom: mobile ? '24px' : '60px' }}>
               {/* CTA under the heading */}
-              <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: '1.6' }}>
+              <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: mobile ? '1.5' : '1.6' }}>
                 <p style={{ margin: 0 }}>
-                  Drop me a line, would love to hear from you about your next project or collaboration.
+                  Drop me a line.
                 </p>
               </div>
 
               {/* Contact Form */}
               <div>
-                <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+                <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '12px' : '24px', width: '100%' }}>
                   {/* Name Field */}
                   <div>
                     <input
@@ -978,12 +1039,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                       disabled={formStatus === 'submitting'}
                       style={{
                         width: '100%',
-                        padding: '12px 0',
+                        padding: mobile ? '8px 0' : '12px 0',
                         backgroundColor: 'transparent',
                         border: 'none',
                         borderBottom: '1px solid rgba(255, 255, 255, 1)',
                         color: '#FFFFFF',
-                        fontSize: '18px',
+                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
                         fontFamily: 'inherit',
                         outline: 'none',
                       }}
@@ -1002,12 +1063,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                       disabled={formStatus === 'submitting'}
                       style={{
                         width: '100%',
-                        padding: '12px 0',
+                        padding: mobile ? '8px 0' : '12px 0',
                         backgroundColor: 'transparent',
                         border: 'none',
                         borderBottom: '1px solid rgba(255, 255, 255, 1)',
                         color: '#FFFFFF',
-                        fontSize: '18px',
+                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
                         fontFamily: 'inherit',
                         outline: 'none',
                       }}
@@ -1022,20 +1083,20 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                       onChange={handleFormChange}
                       placeholder="Message"
                       required
-                      rows={4}
+                      rows={mobile ? 3 : 4}
                       disabled={formStatus === 'submitting'}
                       style={{
                         width: '100%',
-                        padding: '12px 0',
+                        padding: mobile ? '8px 0' : '12px 0',
                         backgroundColor: 'transparent',
                         border: 'none',
                         borderBottom: '1px solid rgba(255, 255, 255, 1)',
                         color: '#FFFFFF',
-                        fontSize: '18px',
+                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
                         fontFamily: 'inherit',
                         outline: 'none',
                         resize: 'vertical',
-                        minHeight: '80px',
+                        minHeight: mobile ? '64px' : '80px',
                       }}
                     />
                   </div>
@@ -1046,12 +1107,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                     disabled={formStatus === 'submitting'}
                     style={{
                       alignSelf: 'flex-start',
-                      padding: '12px 0',
+                      padding: mobile ? '8px 0' : '12px 0',
                       backgroundColor: 'transparent',
                       border: 'none',
                       borderBottom: '1px solid rgba(255, 255, 255, 1)',
                       color: '#FFFFFF',
-                      fontSize: '18px',
+                      fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
                       fontFamily: 'inherit',
                       cursor: formStatus === 'submitting' ? 'not-allowed' : 'pointer',
                       opacity: formStatus === 'submitting' ? 0.5 : 1,
@@ -1096,26 +1157,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             justifyContent: 'flex-end',
             gap: '500px',
           }}>
-            <svg
-              viewBox="0 0 1000 160"
-              width="100%"
-              role="img"
-              aria-label="YOPABLO"
-              style={{ display: 'block', overflow: 'visible', marginTop: '350px', marginBottom: '150px' }}
-            >
-              <text
-                x="0"
-                y="140"
-                textLength="1000"
-                lengthAdjust="spacingAndGlyphs"
-                fontSize="175"
-                fontWeight="700"
-                fill="#FFFFFF"
-                style={{ fontFamily: 'inherit' }}
-              >
-                YOPABLO
-              </text>
-            </svg>
+            <Wordmark style={{ marginTop: '350px', marginBottom: '150px' }} />
 
           </div>
 
@@ -1123,12 +1165,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div className="pb-safe" style={{ 
             marginTop: 'auto',
             paddingTop: '20px',
-            // At the end of the page the Origen dot lines up with the fixed 3D clip
-            // buttons (their row is centred 28px / 36px above the bottom of the screen)
-            paddingBottom: mobile ? '10px' : '16px',
+            // Desktop: at the end of the page the Origen dot lines up with the fixed 3D
+            // clip buttons (their row is centred 36px above the bottom of the screen)
+            paddingBottom: mobile ? '40px' : '16px',
             borderTop: '1px solid rgba(255,255,255,0.15)',
             // Desktop: three columns so the copyright sits dead centre: Origen dot | © | (Work)
-            // Mobile: copyright on its own line above, clear of the buttons
+            // Mobile: stacked — copyright, Origen dot, then Instagram / email at the very bottom
             display: 'grid',
             gridTemplateColumns: mobile ? '1fr' : '1fr auto 1fr',
             rowGap: '16px',
@@ -1153,6 +1195,24 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
               )}
             </div>
+
+            {/* Mobile: contact links at the very bottom of the page */}
+            {mobile && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', fontSize: '15px' }}>
+                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Instagram size={18} strokeWidth={1.5} />
+                    @yopablo
+                  </span>
+                </AnimatedLink>
+                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Mail size={18} strokeWidth={1.5} />
+                    artcoffeecomputer@gmail.com
+                  </span>
+                </AnimatedLink>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1413,6 +1473,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         </div>
       </div>
 
+      </div>
     </div>
   )
 }

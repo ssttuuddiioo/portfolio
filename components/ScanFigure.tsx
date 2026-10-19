@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { Bed, Footprints, Mail, Music, Phone, type LucideIcon } from 'lucide-react'
+import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_STRIP } from './scanLayout'
 
 const MODEL_URL = '/models/pablo-moves.glb'
 
@@ -267,9 +268,10 @@ function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group |
 interface ScanFigureProps {
   mobile?: boolean
   onContactClick?: () => void
+  onClipChange?: (clip: string) => void
 }
 
-export default function ScanFigure({ mobile = false, onContactClick }: ScanFigureProps) {
+export default function ScanFigure({ mobile = false, onContactClick, onClipChange }: ScanFigureProps) {
   const [loaded, setLoaded] = useState(false)
   const [typing, setTyping] = useState(false)
 
@@ -297,11 +299,15 @@ export default function ScanFigure({ mobile = false, onContactClick }: ScanFigur
   const figureWidth = mobile ? FIGURE_WIDTH.mobile : FIGURE_WIDTH.desktop
   const width = `${figureWidth * 100}vw`
   const center = (mobile ? activeClip?.center?.mobile : activeClip?.center?.desktop) ?? 1 - figureWidth / 2
-  const height = mobile ? 'calc(67.5svh - 28px)' : '85vh' // mobile: 1.5x the old 45svh figure (canvas = height minus the button strip)
-  const strip = mobile ? 56 : 72 // space under the figure for the clip buttons
+  // Mobile: 1.5x the old 45svh figure (canvas = height minus the button strip), sized from
+  // --hero-h, the screen height locked at load, so the keyboard opening can't shrink the figure
+  const height = mobile ? 'calc(var(--hero-h, 100svh) * 0.675 - 28px)' : '85vh'
+  const strip = mobile ? SCAN_STRIP.mobile : SCAN_STRIP.desktop // space under the figure for the clip buttons
   // Desktop: lower the figure into the strip (the floor margin keeps its feet clear of the buttons)
   const figureBottom = mobile ? strip : strip - 25
-  const buttonSize = mobile ? 36 : 40
+  // Mobile: raise the button row off the bottom of the screen
+  const buttonsLift = mobile ? SCAN_BUTTONS_LIFT_MOBILE : 0
+  const buttonSize = mobile ? SCAN_BUTTON_SIZE.mobile : SCAN_BUTTON_SIZE.desktop
   const fade: React.CSSProperties = { opacity: loaded ? 1 : 0, transition: 'opacity 0.8s ease' }
   const buttonStyle = (active: boolean): React.CSSProperties => ({
     width: buttonSize,
@@ -351,7 +357,7 @@ export default function ScanFigure({ mobile = false, onContactClick }: ScanFigur
           transition: 'opacity 0.2s ease, visibility 0.2s',
         }}
       >
-        <div style={{ position: 'absolute', right: 0, bottom: 0, width, height: strip, ...fade }}>
+        <div style={{ position: 'absolute', right: 0, bottom: buttonsLift, width, height: strip, ...fade }}>
           {/* Row of clip buttons, centred under the figure */}
           <div
             role="group"
@@ -375,7 +381,10 @@ export default function ScanFigure({ mobile = false, onContactClick }: ScanFigur
                   title={label}
                   aria-label={label}
                   aria-pressed={active}
-                  onClick={() => setClip(name)}
+                  onClick={() => {
+                    setClip(name)
+                    onClipChange?.(name)
+                  }}
                   className="scan-clip-button"
                   style={buttonStyle(active)}
                 >
