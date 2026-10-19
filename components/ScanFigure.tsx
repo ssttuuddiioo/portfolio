@@ -5,7 +5,7 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
-import { Bed, Footprints, Mail, Music, Phone, type LucideIcon } from 'lucide-react'
+import { Bed, Mail, Music, Phone, Volume2, VolumeX, type LucideIcon } from 'lucide-react'
 import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_STRIP } from './scanLayout'
 
 const MODEL_URL = '/models/pablo-moves.glb'
@@ -13,11 +13,17 @@ const MODEL_URL = '/models/pablo-moves.glb'
 // Scan is in metres, +Y up, feet at 0, facing +Z (XR Brooklyn 2026 capture),
 // rigged in Mixamo; each clip is a named animation in the GLB, played in place
 // Clips with their own button in the row
-const CLIPS: { name: string; label: string; Icon: LucideIcon; yaw?: number; center?: { desktop: number; mobile: number } }[] = [
+const CLIPS: {
+  name: string
+  label: string
+  Icon: LucideIcon
+  yaw?: number
+  center?: { desktop: number; mobile: number }
+  audio?: string // looped while this clip plays
+}[] = [
   // Turn the figure (degrees around its vertical axis) while this clip plays
   { name: 'pacing', label: 'On the phone', Icon: Phone, yaw: 150 },
-  { name: 'walking', label: 'Walking', Icon: Footprints, yaw: 130 },
-  { name: 'dancing', label: 'Dancing', Icon: Music },
+  { name: 'dancing', label: 'Dancing', Icon: Music, audio: '/audio/dance.mp3' },
   // Lying flat is wider than standing tall, so slide the figure left to keep it on screen
   { name: 'laying', label: 'Lying down', Icon: Bed, yaw: 40, center: { desktop: 0.66, mobile: 0.5 } },
 ]
@@ -275,6 +281,32 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
   const [loaded, setLoaded] = useState(false)
   const [typing, setTyping] = useState(false)
 
+  // Clip soundtrack: off until a clip with a soundtrack is picked, then keeps playing across
+  // clips until muted with the speaker.
+  // Started straight from click handlers (not an effect) so mobile Safari counts it as
+  // user-initiated playback; silently does nothing if a file is missing.
+  const [soundOn, setSoundOn] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const playClipAudio = (name: string, on = soundOn) => {
+    const src = CLIPS.find((c) => c.name === name)?.audio
+    if (!on) {
+      audioRef.current?.pause()
+      return
+    }
+    // Clips without a soundtrack leave whatever is playing running; only the speaker stops it
+    if (!src) return
+    if (!audioRef.current || !audioRef.current.src.endsWith(src)) {
+      audioRef.current?.pause()
+      audioRef.current = new Audio(src)
+      audioRef.current.loop = true
+    }
+    if (audioRef.current.paused) {
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch(() => {})
+    }
+  }
+  useEffect(() => () => audioRef.current?.pause(), [])
+
   // On touch screens, get the pinned buttons out of the way while the keyboard is up
   useEffect(() => {
     if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
@@ -295,6 +327,8 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
   const handleLoaded = useCallback(() => setLoaded(true), [])
   const figureRef = useRef<THREE.Group>(null)
   const activeClip = CLIPS.find((c) => c.name === clip)
+  // Speaker shows during a clip with a soundtrack, and stays while music plays so it can be muted
+  const showSpeaker = !!activeClip?.audio || soundOn
 
   const figureWidth = mobile ? FIGURE_WIDTH.mobile : FIGURE_WIDTH.desktop
   const width = `${figureWidth * 100}vw`
@@ -361,7 +395,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
           {/* Row of clip buttons, centred under the figure */}
           <div
             role="group"
-            aria-label="Animations and contact"
+            aria-label="Sound, animations and contact"
             style={{
               position: 'absolute',
               left: '50%',
@@ -372,6 +406,37 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
               pointerEvents: 'auto',
             }}
           >
+            {/* Sound on / off: shown during Dancing and while its music keeps playing. Sits just
+                outside the row's left end so showing it doesn't shift the centred buttons. */}
+            <button
+              type="button"
+              title={soundOn ? 'Mute' : 'Sound on'}
+              aria-label={soundOn ? 'Mute' : 'Sound on'}
+              aria-pressed={soundOn}
+              aria-hidden={!showSpeaker}
+              tabIndex={showSpeaker ? 0 : -1}
+              onClick={() => {
+                const next = !soundOn
+                setSoundOn(next)
+                playClipAudio(clip, next)
+              }}
+              className="scan-clip-button"
+              style={{
+                ...buttonStyle(false),
+                position: 'absolute',
+                right: `calc(100% + ${mobile ? 12 : 16}px)`,
+                top: 0,
+                opacity: showSpeaker ? 1 : 0,
+                visibility: showSpeaker ? 'visible' : 'hidden',
+                transition: 'opacity 0.2s ease, visibility 0.2s, background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+              }}
+            >
+              {soundOn ? (
+                <Volume2 size={mobile ? 16 : 18} strokeWidth={1.5} />
+              ) : (
+                <VolumeX size={mobile ? 16 : 18} strokeWidth={1.5} />
+              )}
+            </button>
             {CLIPS.map(({ name, label, Icon }) => {
               const active = clip === name
               return (
@@ -383,6 +448,10 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
                   aria-pressed={active}
                   onClick={() => {
                     setClip(name)
+                    // Picking a clip with a soundtrack turns sound on; the speaker can then mute it
+                    const withSound = soundOn || !!CLIPS.find((c) => c.name === name)?.audio
+                    setSoundOn(withSound)
+                    playClipAudio(name, withSound)
                     onClipChange?.(name)
                   }}
                   className="scan-clip-button"
@@ -400,6 +469,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
                 aria-pressed={clip === EMAIL_CLIP}
                 onClick={() => {
                   setClip(EMAIL_CLIP)
+                  playClipAudio(EMAIL_CLIP)
                   onContactClick()
                 }}
                 className="scan-clip-button"

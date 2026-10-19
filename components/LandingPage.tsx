@@ -495,6 +495,41 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         maxHeight: mobile ? 'var(--hero-h, 100svh)' : 'none',
         overflow: mobile ? 'hidden' : 'visible'
       }}>
+        {/* Desktop: "View selected projects" with the contact links under it, at the bottom of the
+            first screen; the links row is button-height and centred on the 3D clip buttons' line */}
+        {!mobile && (
+          <div style={{
+            position: 'absolute',
+            left: '88px',
+            bottom: `${(SCAN_STRIP.desktop - SCAN_BUTTON_SIZE.desktop) / 2}px`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '8px',
+            zIndex: 1,
+          }}>
+            <span style={{ fontSize: 'clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem)', fontWeight: 700, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+              <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+                View selected projects
+              </AnimatedLink>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '32px', fontSize: '18px', height: `${SCAN_BUTTON_SIZE.desktop}px` }}>
+              <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <Instagram size={22} strokeWidth={1.5} />
+                  @yopablo
+                </span>
+              </AnimatedLink>
+              <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <Mail size={22} strokeWidth={1.5} />
+                  artcoffeecomputer@gmail.com
+                </span>
+              </AnimatedLink>
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 flex flex-col" style={{ minHeight: 0, height: '100%', justifyContent: 'space-between' }}>
           {/* Top Section - Large Heading */}
           <div style={{ 
@@ -506,24 +541,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             overflow: 'hidden'
           }}>
             <div ref={titleRef}>
-              <InteractiveBio mobile={mobile} />
-              {/* Contact links below bio (desktop; mobile has them at the bottom of the page) */}
-              {!mobile && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 32px', marginTop: '32px', fontSize: '18px' }}>
-                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <Instagram size={mobile ? 18 : 22} strokeWidth={1.5} />
-                    @yopablo
-                  </span>
-                </AnimatedLink>
-                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={mobile ? 18 : 22} strokeWidth={1.5} />
-                    artcoffeecomputer@gmail.com
-                  </span>
-                </AnimatedLink>
-              </div>
-              )}
+              <InteractiveBio mobile={mobile} showWorkLink={mobile} />
             </div>
           </div>
           
@@ -1157,7 +1175,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             justifyContent: 'flex-end',
             gap: '500px',
           }}>
-            <Wordmark style={{ marginTop: '350px', marginBottom: '150px' }} />
+            <Wordmark style={{ marginTop: '350px', marginBottom: '350px' }} />
 
           </div>
 

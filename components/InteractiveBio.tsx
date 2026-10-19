@@ -20,9 +20,11 @@ interface InteractiveBioProps {
   mobile?: boolean
   className?: string
   style?: React.CSSProperties
+  // Desktop renders "View selected projects" in the bottom bar instead (see LandingPage)
+  showWorkLink?: boolean
 }
 
-export function InteractiveBio({ mobile = false, className = '', style = {} }: InteractiveBioProps) {
+export function InteractiveBio({ mobile = false, className = '', style = {}, showWorkLink = true }: InteractiveBioProps) {
   const [array1Index, setArray1Index] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
 
@@ -187,7 +189,10 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
         ...style,
       }}
     >
-      Hi, I’m Pablo. I’m {article1}{' '}
+      Hi, I’m Pablo.
+      {/* Second sentence always starts on its own line */}
+      <br />
+      I’m {article1}{' '}
       {/* Keep the role and its period together so the period never wraps onto its own line */}
       <span style={{ whiteSpace: 'nowrap' }}>
       <span
@@ -230,14 +235,14 @@ export function InteractiveBio({ mobile = false, className = '', style = {} }: I
       </span>
       .
       </span>{' '}
-      I create and produce immersive experiences, apps, and interactive art in New York City, the best city in the world. I’m also into long bike rides and currently really deep into a micro-lot coffee project.
-      <span className="block" style={{ marginTop: '0.75em' }}>
-        Check out my{' '}
-        <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
-          work
-        </AnimatedLink>
-        .
-      </span>
+      I create and produce immersive experiences, apps, and interactive art in New York City, the best city in the world.
+      {showWorkLink && (
+        <span className="block" style={{ marginTop: '0.75em' }}>
+          <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">
+            View selected projects
+          </AnimatedLink>
+        </span>
+      )}
     </h1>
   )
 }
