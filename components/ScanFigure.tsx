@@ -36,6 +36,9 @@ const CLIPS: {
 // Played by the contact (email) button rather than its own icon
 const EMAIL_CLIP = 'typing'
 const CROSSFADE = 0.5 // seconds
+// Lying down rests on the landing wordmark; its letters' top edge as a fraction of the svg height
+const LIE_ON_WORDMARK_CLIP = 'laying'
+const WORDMARK_CAP_TOP = 14 / 160
 const DISTANCE = 4
 const FOV = 30
 const FLOOR_MARGIN = 0.13 // metres of floor visible below the feet
@@ -147,11 +150,13 @@ function Orbit({
   center,
   offsetX = 0,
   faceYaw = null,
+  floorY = null,
 }: {
   figureRef: React.RefObject<THREE.Group | null>
   center: number
   offsetX?: number
   faceYaw?: number | null
+  floorY?: number | null // viewport px the floor (where the figure rests) should sit at
 }) {
   const { camera, gl, size } = useThree()
   const orbit = useRef({
@@ -161,7 +166,9 @@ function Orbit({
     spin: IDLE_SPIN,
     center,
     snapTo: null as number | null,
+    offsetY: 0,
   })
+  const origin = useMemo(() => new THREE.Vector3(), [])
 
   // Swing to the nearest front-facing angle (the figure faces +Z, turned by faceYaw)
   useEffect(() => {
@@ -314,6 +321,17 @@ function Orbit({
     const fullWidth = 2 * Math.max(fx, w - fx)
     cam.aspect = fullWidth / h
     cam.setViewOffset(fullWidth, h, fullWidth / 2 - fx, 0, w, h)
+
+    // Vertical shift so the floor lands on floorY (e.g. lying on top of the wordmark).
+    // The floor under the figure projects to the same height at any orbit angle.
+    let targetY = 0
+    if (floorY !== null) {
+      origin.set(0, 0, 0).project(cam)
+      const floorInCanvas = ((1 - origin.y) / 2) * h
+      targetY = floorInCanvas - (floorY - gl.domElement.getBoundingClientRect().top)
+    }
+    o.offsetY = THREE.MathUtils.damp(o.offsetY, targetY, 4, delta)
+    if (Math.abs(o.offsetY) > 0.01) cam.setViewOffset(fullWidth, h, fullWidth / 2 - fx, o.offsetY, w, h)
   })
 
   return null
@@ -373,6 +391,23 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
     }
   }, [])
   const [clip, setClip] = useState(CLIPS[0].name)
+
+  // Lying down rests on top of the landing YOPABLO: where its letters' top edge sits on screen
+  // when the page is at the landing (the figure is pinned, so this holds while scrolling)
+  const [wordmarkTop, setWordmarkTop] = useState<number | null>(null)
+  useEffect(() => {
+    if (clip !== LIE_ON_WORDMARK_CLIP) return
+    const measure = () => {
+      const el = document.getElementById('landing-wordmark')
+      if (!el) return setWordmarkTop(null)
+      const r = el.getBoundingClientRect()
+      // Page position of the svg, plus the gap above the cap height (glyph tops at ~14 of 160 units)
+      setWordmarkTop(r.top + window.scrollY + r.height * WORDMARK_CAP_TOP)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [clip])
   const handleLoaded = useCallback(() => setLoaded(true), [])
   const figureRef = useRef<THREE.Group>(null)
   const activeClip = CLIPS.find((c) => c.name === clip)
@@ -439,6 +474,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
               center={center}
               offsetX={mobile ? 0 : FIGURE_OFFSET_X_DESKTOP}
               faceYaw={clip === EMAIL_CLIP ? 0 : null}
+              floorY={clip === LIE_ON_WORDMARK_CLIP ? wordmarkTop : null}
             />
           </Canvas>
         </div>

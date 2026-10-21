@@ -19,9 +19,9 @@ const FOOTER_WORDMARK_GAP = 350
 const FOOTER_ROW_DESKTOP = 20 + SCAN_BUTTON_SIZE.desktop + 16 + 1
 
 // The big YOPABLO wordmark, stretched to the full width it's given
-function Wordmark({ style }: { style?: React.CSSProperties }) {
+function Wordmark({ style, id }: { style?: React.CSSProperties; id?: string }) {
   return (
-    <svg viewBox="0 0 1000 160" width="100%" role="img" aria-label="YOPABLO" style={{ display: 'block', overflow: 'visible', ...style }}>
+    <svg id={id} viewBox="0 0 1000 160" width="100%" role="img" aria-label="YOPABLO" style={{ display: 'block', overflow: 'visible', ...style }}>
       <text
         x="0"
         y="140"
@@ -474,6 +474,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           at the bottom of the page. */}
       <div className={mobile ? 'snap-start' : undefined} style={{ position: 'relative', height: mobile ? 'var(--hero-h, 100svh)' : '100vh' }}>
         <Wordmark
+          id="landing-wordmark" // the 3D figure lies on top of it (see ScanFigure)
           style={
             mobile
               ? {
