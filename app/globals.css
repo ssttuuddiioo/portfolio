@@ -94,15 +94,6 @@ svg {
   color: #0020FF !important;
 }
 
-/* Footer Origen dot */
-.origen-dot {
-  transition: transform 0.2s ease;
-}
-
-.origen-dot:hover {
-  transform: scale(1.1);
-}
-
 /* Force all links to be white by default */
 a,
 a:link,

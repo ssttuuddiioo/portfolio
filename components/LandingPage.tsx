@@ -13,7 +13,7 @@ import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_ROW_DESKTOP, SCAN_STRI
 const ScanFigure = dynamic(() => import('./ScanFigure'), { ssr: false })
 
 // Space under the footer wordmark, and the desktop footer bottom row's height
-// (padding + Origen dot + border); the desktop landing wordmark sits at the same height
+// (padding + button-height spacer + border); the desktop landing wordmark sits at the same height
 // the footer wordmark ends up at the bottom of the page, so the two screens match
 const FOOTER_WORDMARK_GAP = 350
 const FOOTER_ROW_DESKTOP = 20 + SCAN_BUTTON_SIZE.desktop + 16 + 1
@@ -1290,54 +1290,25 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div className="pb-safe" style={{ 
             marginTop: 'auto',
             paddingTop: '20px',
-            // Desktop: at the end of the page the Origen dot sits on the same line as the bio
-            // screen's bottom links (centred 36px above the bottom of the screen)
             paddingBottom: mobile ? '40px' : '16px',
             borderTop: '1px solid rgba(255,255,255,0.15)',
-            // Desktop: three columns so the copyright sits dead centre: Origen dot | © | (Work)
-            // Mobile: stacked — copyright, Origen dot, then Instagram / email at the very bottom
+            // Desktop: three columns so the copyright sits dead centre: (spacer) | © | (Work)
             display: 'grid',
             gridTemplateColumns: mobile ? '1fr' : '1fr auto 1fr',
             rowGap: '16px',
             alignItems: 'center',
             fontSize: '13px'
           }}>
-            {/* Origen coffee — same size as the 3D clip buttons */}
-            <a
-              href="https://origen.nyc"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Origen coffee"
-              title="Origen"
-              className="origen-dot"
-              style={{ display: 'block', justifySelf: 'start', width: mobile ? '36px' : '40px', height: mobile ? '36px' : '40px', borderRadius: '50%', backgroundColor: '#FF6700' }}
-            />
+            {/* Desktop: empty left column (button height) so the copyright stays centred and the row keeps its height */}
+            {!mobile && <div style={{ height: `${SCAN_BUTTON_SIZE.desktop}px` }} />}
 
-            <div style={{ opacity: 0.5, textAlign: 'center', order: mobile ? -1 : 0 }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
+            <div style={{ opacity: 0.5, textAlign: 'center' }} suppressHydrationWarning>© {currentYear} Pablo Gnecco</div>
 
             <div style={{ display: mobile ? 'none' : 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px' }}>
               {showSecondarySections && (
                 <AnimatedLink href="/work" style={{ opacity: 0.6 }}>Work</AnimatedLink>
               )}
             </div>
-
-            {/* Mobile: contact links at the very bottom of the page */}
-            {mobile && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', fontSize: '15px' }}>
-                <AnimatedLink href="https://instagram.com/yopablo" target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <Instagram size={18} strokeWidth={1.5} />
-                    @yopablo
-                  </span>
-                </AnimatedLink>
-                <AnimatedLink href="mailto:artcoffeecomputer@gmail.com" style={{ color: '#FFFFFF' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={18} strokeWidth={1.5} />
-                    artcoffeecomputer@gmail.com
-                  </span>
-                </AnimatedLink>
-              </div>
-            )}
           </div>
         </div>
       </div>
