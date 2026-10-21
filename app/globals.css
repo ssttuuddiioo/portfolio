@@ -61,6 +61,32 @@ svg {
   }
 }
 
+/* Bio typewriter caret */
+@keyframes typing-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.typing-caret {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.9em;
+  margin-left: 0.04em;
+  vertical-align: -0.08em;
+  background: currentColor;
+  animation: typing-caret-blink 1s step-end infinite;
+}
+
+/* Landing "Scroll" prompt: the arrow bobs gently */
+@keyframes scroll-cta-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+.scroll-cta-arrow {
+  animation: scroll-cta-bob 1.6s ease-in-out infinite;
+}
+
 /* 3D scan clip buttons */
 .scan-clip-button:hover {
   background: #FDF843 !important;

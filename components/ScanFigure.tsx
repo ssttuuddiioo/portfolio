@@ -5,27 +5,33 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
-import { Bed, Mail, Music, Phone, Volume2, VolumeX, type LucideIcon } from 'lucide-react'
-import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_STRIP } from './scanLayout'
+import { Bed, Info, Mail, Music, Volume2, VolumeX, type LucideIcon } from 'lucide-react'
+import {
+  SCAN_BUTTON_SIZE,
+  SCAN_BUTTONS_LIFT_MOBILE,
+  SCAN_ROW_DESKTOP,
+  SCAN_STRIP,
+  WORDMARK_LAST_O_CENTER,
+  WORDMARK_MARGIN_DESKTOP,
+} from './scanLayout'
 
 const MODEL_URL = '/models/pablo-moves.glb'
 
 // Scan is in metres, +Y up, feet at 0, facing +Z (XR Brooklyn 2026 capture),
 // rigged in Mixamo; each clip is a named animation in the GLB, played in place
-// Clips with their own button in the row
+// Clips, in button order; the first is what the page lands on
 const CLIPS: {
   name: string
   label: string
-  Icon: LucideIcon
+  Icon?: LucideIcon // no icon = no button (the landing clip)
   yaw?: number
   center?: { desktop: number; mobile: number }
   audio?: string // looped while this clip plays
 }[] = [
   // Turn the figure (degrees around its vertical axis) while this clip plays
-  { name: 'pacing', label: 'On the phone', Icon: Phone, yaw: 150 },
+  { name: 'pacing', label: 'On the phone', yaw: 150 },
   { name: 'dancing', label: 'Dancing', Icon: Music, audio: '/audio/dance.mp3' },
-  // Lying flat is wider than standing tall, so slide the figure left to keep it on screen
-  { name: 'laying', label: 'Lying down', Icon: Bed, yaw: 40, center: { desktop: 0.66, mobile: 0.5 } },
+  { name: 'laying', label: 'Lying down', Icon: Bed, yaw: 40 },
 ]
 // Played by the contact (email) button rather than its own icon
 const EMAIL_CLIP = 'typing'
@@ -33,10 +39,12 @@ const CROSSFADE = 0.5 // seconds
 const DISTANCE = 4
 const FOV = 30
 const FLOOR_MARGIN = 0.13 // metres of floor visible below the feet
-// Aim so the floor sits at the bottom of the frame
+// Aim at the figure's middle (≈ hip height), leaving a little floor below the feet
 const TARGET = new THREE.Vector3(0, DISTANCE * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) - FLOOR_MARGIN, 0)
-// Width of the figure's column at the right edge (full width on mobile, so the figure is centred)
-const FIGURE_WIDTH = { desktop: 0.34, mobile: 1 } // fraction of the viewport
+// Width of the figure's column at the right edge; full width, so the figure and buttons are centred
+const FIGURE_WIDTH = { desktop: 1, mobile: 1 } // fraction of the viewport
+// Desktop: shift the figure this many px right of centre
+const FIGURE_OFFSET_X_DESKTOP = 300
 const MIN_POLAR = Math.PI * 0.2
 const MAX_POLAR = Math.PI * 0.62
 const IDLE_SPIN = 0.25 // radians per second; pauses while the visitor drags, then eases back in
@@ -131,9 +139,41 @@ function Figure({
 // The page content sits above this canvas, so drags are picked up on the window
 // and only start when the pointer is on the figure and not on text or a link.
 // center: where the figure stands across the (full-width) canvas, 0 = left edge, 1 = right edge
-function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group | null>; center: number }) {
+// offsetX: extra px to shift the figure right of `center`
+// faceYaw: when set (degrees the figure is turned), the idle spin pauses and the camera
+// swings round to the figure's front, so it faces the visitor (e.g. sitting at the contact form)
+function Orbit({
+  figureRef,
+  center,
+  offsetX = 0,
+  faceYaw = null,
+}: {
+  figureRef: React.RefObject<THREE.Group | null>
+  center: number
+  offsetX?: number
+  faceYaw?: number | null
+}) {
   const { camera, gl, size } = useThree()
-  const orbit = useRef({ azimuth: 0, polar: Math.PI / 2 - 0.03, held: false, spin: IDLE_SPIN, center })
+  const orbit = useRef({
+    azimuth: 0,
+    polar: Math.PI / 2 - 0.03,
+    held: false,
+    spin: IDLE_SPIN,
+    center,
+    snapTo: null as number | null,
+  })
+
+  // Swing to the nearest front-facing angle (the figure faces +Z, turned by faceYaw)
+  useEffect(() => {
+    const o = orbit.current
+    if (faceYaw === null) {
+      o.snapTo = null
+      return
+    }
+    const front = THREE.MathUtils.degToRad(faceYaw)
+    const turns = Math.round((o.azimuth - front) / (Math.PI * 2))
+    o.snapTo = front + turns * Math.PI * 2
+  }, [faceYaw])
   const spherical = useMemo(() => new THREE.Spherical(), [])
 
   useEffect(() => {
@@ -250,9 +290,17 @@ function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group |
 
   useFrame((_, delta) => {
     const o = orbit.current
-    // Stop spinning while held; afterwards ease back up to the idle speed
-    o.spin = o.held ? 0 : THREE.MathUtils.damp(o.spin, IDLE_SPIN, 1.5, delta)
+    // Stop spinning while held or facing the visitor; otherwise ease back up to the idle speed
+    o.spin = o.held || faceYaw !== null ? 0 : THREE.MathUtils.damp(o.spin, IDLE_SPIN, 1.5, delta)
     o.azimuth += delta * o.spin
+    if (o.snapTo !== null) {
+      if (o.held) {
+        o.snapTo = null // a drag takes over
+      } else {
+        o.azimuth = THREE.MathUtils.damp(o.azimuth, o.snapTo, 4, delta)
+        if (Math.abs(o.azimuth - o.snapTo) < 0.001) o.snapTo = null
+      }
+    }
     spherical.set(DISTANCE, o.polar, o.azimuth)
     camera.position.setFromSpherical(spherical).add(TARGET)
     camera.lookAt(TARGET)
@@ -262,7 +310,7 @@ function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group |
     o.center = THREE.MathUtils.damp(o.center, center, 4, delta)
     const cam = camera as THREE.PerspectiveCamera
     const { width: w, height: h } = size
-    const fx = o.center * w
+    const fx = o.center * w + offsetX
     const fullWidth = 2 * Math.max(fx, w - fx)
     cam.aspect = fullWidth / h
     cam.setViewOffset(fullWidth, h, fullWidth / 2 - fx, 0, w, h)
@@ -274,10 +322,11 @@ function Orbit({ figureRef, center }: { figureRef: React.RefObject<THREE.Group |
 interface ScanFigureProps {
   mobile?: boolean
   onContactClick?: () => void
-  onClipChange?: (clip: string) => void
+  onInfoClick?: () => void
+  onMusicStart?: () => void // fires each time a soundtrack actually starts playing
 }
 
-export default function ScanFigure({ mobile = false, onContactClick, onClipChange }: ScanFigureProps) {
+export default function ScanFigure({ mobile = false, onContactClick, onInfoClick, onMusicStart }: ScanFigureProps) {
   const [loaded, setLoaded] = useState(false)
   const [typing, setTyping] = useState(false)
 
@@ -302,7 +351,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
     }
     if (audioRef.current.paused) {
       audioRef.current.currentTime = 0
-      audioRef.current.play().catch(() => {})
+      audioRef.current.play().then(() => onMusicStart?.()).catch(() => {})
     }
   }
   useEffect(() => () => audioRef.current?.pause(), [])
@@ -337,11 +386,10 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
   // --hero-h, the screen height locked at load, so the keyboard opening can't shrink the figure
   const height = mobile ? 'calc(var(--hero-h, 100svh) * 0.675 - 28px)' : '85vh'
   const strip = mobile ? SCAN_STRIP.mobile : SCAN_STRIP.desktop // space under the figure for the clip buttons
-  // Desktop: lower the figure into the strip (the floor margin keeps its feet clear of the buttons)
-  const figureBottom = mobile ? strip : strip - 25
-  // Mobile: raise the button row off the bottom of the screen
+  // Mobile: raise the button row off the bottom of the screen (desktop keeps it in the corner)
   const buttonsLift = mobile ? SCAN_BUTTONS_LIFT_MOBILE : 0
-  const buttonSize = mobile ? SCAN_BUTTON_SIZE.mobile : SCAN_BUTTON_SIZE.desktop
+  const buttonSize = mobile ? SCAN_BUTTON_SIZE.mobile : SCAN_ROW_DESKTOP.buttonSize
+  const iconSize = mobile ? 16 : SCAN_ROW_DESKTOP.iconSize
   const fade: React.CSSProperties = { opacity: loaded ? 1 : 0, transition: 'opacity 0.8s ease' }
   const buttonStyle = (active: boolean): React.CSSProperties => ({
     width: buttonSize,
@@ -364,7 +412,18 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
   return createPortal(
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#0020FF', pointerEvents: 'none' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: figureBottom, height: `calc(${height} - ${strip}px)`, ...fade }}>
+        {/* Figure box, vertically centred on screen (the camera already aims at the figure's middle) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: mobile ? 'calc(var(--hero-h, 100svh) / 2)' : '50%',
+            transform: 'translateY(-50%)',
+            height: `calc(${height} - ${strip}px)`,
+            ...fade,
+          }}
+        >
           <Canvas
             flat
             dpr={[1, 2]}
@@ -375,7 +434,12 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
             <Suspense fallback={null}>
               <Figure clip={clip} yaw={activeClip?.yaw ?? 0} onLoaded={handleLoaded} figureRef={figureRef} />
             </Suspense>
-            <Orbit figureRef={figureRef} center={center} />
+            <Orbit
+              figureRef={figureRef}
+              center={center}
+              offsetX={mobile ? 0 : FIGURE_OFFSET_X_DESKTOP}
+              faceYaw={clip === EMAIL_CLIP ? 0 : null}
+            />
           </Canvas>
         </div>
       </div>
@@ -392,15 +456,20 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
         }}
       >
         <div style={{ position: 'absolute', right: 0, bottom: buttonsLift, width, height: strip, ...fade }}>
-          {/* Row of clip buttons, centred under the figure */}
+          {/* Row of clip buttons: centred under the figure on mobile; on desktop centred under the
+              last O of the landing wordmark (same margins as the wordmark, measured from the right) */}
           <div
             role="group"
-            aria-label="Sound, animations and contact"
+            aria-label="Sound, animations, info and contact"
             style={{
               position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
+              ...(mobile
+                ? { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }
+                : {
+                    right: `calc(${WORDMARK_MARGIN_DESKTOP}px + ${1 - WORDMARK_LAST_O_CENTER} * (100% - ${2 * WORDMARK_MARGIN_DESKTOP}px))`,
+                    bottom: SCAN_ROW_DESKTOP.centerFromBottom,
+                    transform: 'translate(50%, 50%)',
+                  }),
               display: 'flex',
               gap: 8,
               pointerEvents: 'auto',
@@ -432,12 +501,26 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
               }}
             >
               {soundOn ? (
-                <Volume2 size={mobile ? 16 : 18} strokeWidth={1.5} />
+                <Volume2 size={iconSize} strokeWidth={1.5} />
               ) : (
-                <VolumeX size={mobile ? 16 : 18} strokeWidth={1.5} />
+                <VolumeX size={iconSize} strokeWidth={1.5} />
               )}
             </button>
+            {/* Info first, then the animations, then contact */}
+            {onInfoClick && (
+              <button
+                type="button"
+                title="Info"
+                aria-label="Info"
+                onClick={onInfoClick}
+                className="scan-clip-button"
+                style={buttonStyle(false)}
+              >
+                <Info size={iconSize} strokeWidth={1.5} />
+              </button>
+            )}
             {CLIPS.map(({ name, label, Icon }) => {
+              if (!Icon) return null
               const active = clip === name
               return (
                 <button
@@ -452,12 +535,11 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
                     const withSound = soundOn || !!CLIPS.find((c) => c.name === name)?.audio
                     setSoundOn(withSound)
                     playClipAudio(name, withSound)
-                    onClipChange?.(name)
                   }}
                   className="scan-clip-button"
                   style={buttonStyle(active)}
                 >
-                  <Icon size={mobile ? 16 : 18} strokeWidth={1.5} />
+                  <Icon size={iconSize} strokeWidth={1.5} />
                 </button>
               )
             })}
@@ -473,9 +555,9 @@ export default function ScanFigure({ mobile = false, onContactClick, onClipChang
                   onContactClick()
                 }}
                 className="scan-clip-button"
-                style={{ ...buttonStyle(clip === EMAIL_CLIP), marginLeft: mobile ? 4 : 8 }}
+                style={buttonStyle(clip === EMAIL_CLIP)}
               >
-                <Mail size={mobile ? 16 : 18} strokeWidth={1.5} />
+                <Mail size={iconSize} strokeWidth={1.5} />
               </button>
             )}
           </div>

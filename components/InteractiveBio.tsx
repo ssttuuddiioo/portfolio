@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { gsap } from 'gsap'
+import { useEffect, useState } from 'react'
 import { AnimatedLink } from './AnimatedLink'
 
-// Clickable role (the only interactive phrase) — "Hi, I’m Pablo. I’m a/an ___."
-const array1 = [
+// Roles the bio types through — "Hi, I’m Pablo. I’m a/an ___."
+const ROLES = [
   'experiential director',
   'creative technologist',
+  'multi-hyphenate',
   'installation artist',
   'light designer',
   'new media artist',
@@ -15,6 +15,16 @@ const array1 = [
   'spatial designer',
   'creative director',
 ]
+
+// Typewriter timing (ms)
+const TYPE_MS = 70 // per letter typed
+const DELETE_MS = 40 // per letter backspaced
+const HOLD_MS = 2600 // a full role stays on screen
+const GAP_MS = 350 // pause on the empty role before typing the next
+
+// Width of the longest desktop bio line ("immersive experiences, apps, and interactive art in",
+// 23.7em) plus slack for the scrollbar, in ems of the bio font; used to shrink the font until it fits
+const DESKTOP_LONGEST_LINE_EM = 24.6
 
 interface InteractiveBioProps {
   mobile?: boolean
@@ -24,167 +34,62 @@ interface InteractiveBioProps {
   showWorkLink?: boolean
 }
 
+// "a" or "an" for a role
+const getArticle = (phrase: string) => ('aeiou'.includes(phrase.trim().charAt(0).toLowerCase()) ? 'an' : 'a')
+
+// Backspaces the current role and types the next, looping through ROLES
+function useTypedRole() {
+  const [index, setIndex] = useState(0)
+  const [text, setText] = useState(ROLES[0])
+  const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const role = ROLES[index]
+    let delay: number
+    let step: () => void
+    if (!deleting && text === role) {
+      delay = HOLD_MS
+      step = () => setDeleting(true)
+    } else if (deleting && text === '') {
+      delay = GAP_MS
+      step = () => {
+        setDeleting(false)
+        setIndex((i) => (i + 1) % ROLES.length)
+      }
+    } else if (deleting) {
+      delay = DELETE_MS
+      step = () => setText((t) => t.slice(0, -1))
+    } else {
+      delay = TYPE_MS
+      step = () => setText(role.slice(0, text.length + 1))
+    }
+    const timer = setTimeout(step, delay)
+    return () => clearTimeout(timer)
+  }, [index, text, deleting])
+
+  // The article follows the role being typed (or the one being deleted)
+  return { text, article: getArticle(ROLES[index]) }
+}
+
 export function InteractiveBio({ mobile = false, className = '', style = {}, showWorkLink = true }: InteractiveBioProps) {
-  const [array1Index, setArray1Index] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
+  const { text: role, article } = useTypedRole()
 
-  // Wrapper ref for click animation
-  const phrase1Ref = useRef<HTMLSpanElement>(null)
-
-  // Highlight and text refs for hover animation
-  const phrase1HighlightRef = useRef<HTMLSpanElement>(null)
-  const phrase1TextRef = useRef<HTMLSpanElement>(null)
-
-  const ctxRef = useRef<gsap.Context | null>(null)
-
-  // Initialize GSAP context
-  useEffect(() => {
-    ctxRef.current = gsap.context(() => {})
-    return () => {
-      ctxRef.current?.revert()
-    }
-  }, [])
-
-  // Hover handlers for the clickable phrase
-  const setupHoverHandlers = useCallback(
-    (
-      highlightRef: React.RefObject<HTMLSpanElement | null>,
-      textRef: React.RefObject<HTMLSpanElement | null>,
-      wrapperRef: React.RefObject<HTMLSpanElement | null>
-    ) => {
-      const wrapper = wrapperRef.current
-      const highlight = highlightRef.current
-      const text = textRef.current
-
-      if (!wrapper || !highlight || !text) return
-
-      const handleMouseEnter = () => {
-        // Animate highlight from left to right
-        gsap.to(highlight, {
-          scaleX: 1,
-          duration: 0.4,
-          ease: 'power2.inOut',
-        })
-
-        // Change text color to blue
-        gsap.to(text, {
-          color: '#0020FF',
-          duration: 0.3,
-          ease: 'power2.inOut',
-        })
-
-        // Increase underline thickness
-        text.style.textDecorationThickness = '3px'
-      }
-
-      const handleMouseLeave = () => {
-        // Animate highlight back (right to left)
-        gsap.to(highlight, {
-          scaleX: 0,
-          duration: 0.4,
-          ease: 'power2.inOut',
-        })
-
-        // Reset text color to white
-        gsap.to(text, {
-          color: '#FFFFFF',
-          duration: 0.3,
-          ease: 'power2.inOut',
-        })
-
-        // Reset underline thickness
-        text.style.textDecorationThickness = '1px'
-      }
-
-      wrapper.addEventListener('mouseenter', handleMouseEnter)
-      wrapper.addEventListener('mouseleave', handleMouseLeave)
-
-      return () => {
-        wrapper.removeEventListener('mouseenter', handleMouseEnter)
-        wrapper.removeEventListener('mouseleave', handleMouseLeave)
-      }
-    },
-    []
-  )
-
-  // Setup hover handlers for the clickable phrase
-  useEffect(() => {
-    const cleanup1 = setupHoverHandlers(phrase1HighlightRef, phrase1TextRef, phrase1Ref)
-    return () => {
-      cleanup1?.()
-    }
-  }, [setupHoverHandlers])
-
-  const handlePhraseClick = useCallback(() => {
-    if (isAnimating) return
-
-    setIsAnimating(true)
-
-    const ref = phrase1Ref
-    const nextIndex = (array1Index + 1) % array1.length
-
-    // Animate out, then update text and animate in
-    if (ref.current && ctxRef.current) {
-      // Reset any existing transforms
-      gsap.set(ref.current, { clearProps: 'all' })
-
-      // Animate out with pixelation effect
-      gsap.to(ref.current, {
-        filter: 'blur(8px)',
-        scale: 0.95,
-        opacity: 0.3,
-        duration: 0.125,
-        ease: 'power2.in',
-        onComplete: () => {
-          // Update text
-          setArray1Index(nextIndex)
-          // Use requestAnimationFrame to ensure DOM update happens before animation
-          requestAnimationFrame(() => {
-            if (ref.current) {
-              // Animate in with depixelation effect
-              gsap.fromTo(
-                ref.current,
-                {
-                  filter: 'blur(8px)',
-                  scale: 0.95,
-                  opacity: 0.3,
-                },
-                {
-                  filter: 'blur(0px)',
-                  scale: 1,
-                  opacity: 1,
-                  duration: 0.125,
-                  ease: 'power2.out',
-                  onComplete: () => {
-                    setIsAnimating(false)
-                  },
-                }
-              )
-            }
-          })
-        },
-      })
-    }
-  }, [array1Index, isAnimating])
-
-  const currentPhrase1 = array1[array1Index]
-
-  // Helper function to determine if we should use "a" or "an"
-  const getArticle = (phrase: string): string => {
-    const firstLetter = phrase.trim().charAt(0).toLowerCase()
-    const vowels = ['a', 'e', 'i', 'o', 'u']
-    return vowels.includes(firstLetter) ? 'an' : 'a'
-  }
-
-  const article1 = getArticle(currentPhrase1)
+  // Desktop: the bio is always exactly four lines; mobile wraps naturally
+  const desktopBreak = mobile ? ' ' : <br />
 
   return (
     <h1
       className={`font-bold text-white hero-title ${className}`}
       style={{
         lineHeight: mobile ? '1.2' : '1.1',
-        maxWidth: mobile ? '100%' : '75%',
-        fontSize: mobile ? 'clamp(0.99rem, 2.2vw + 0.44rem, 1.32rem)' : 'clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem)',
+        maxWidth: mobile ? '100%' : 'none',
+        // Desktop: set lines (see desktopBreak) that never wrap; the font shrinks on narrower
+        // windows so the longest line still fits beside the page margins
+        whiteSpace: mobile ? undefined : 'nowrap',
+        fontSize: mobile
+          ? 'clamp(0.99rem, 2.2vw + 0.44rem, 1.32rem)'
+          : `min(clamp(0.945rem, 2.52vw + 0.63rem, 2.835rem), calc((100vw - 176px) / ${DESKTOP_LONGEST_LINE_EM}))`,
         marginBottom: mobile ? '8px' : '0',
         ...style,
       }}
@@ -192,50 +97,20 @@ export function InteractiveBio({ mobile = false, className = '', style = {}, sho
       Hi, I’m Pablo.
       {/* Second sentence always starts on its own line */}
       <br />
-      I’m {article1}{' '}
+      I’m <span aria-hidden="true">{article} </span>
       {/* Keep the role and its period together so the period never wraps onto its own line */}
       <span style={{ whiteSpace: 'nowrap' }}>
-      <span
-        ref={phrase1Ref}
-        onClick={() => handlePhraseClick()}
-        className="relative inline-block cursor-pointer"
-        style={{
-          position: 'relative',
-          zIndex: 0,
-        }}
-      >
-        <span
-          ref={phrase1HighlightRef}
-          className="absolute bg-[#FDF843]"
-          style={{
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            transformOrigin: 'left',
-            transform: 'scaleX(0)',
-            zIndex: 0,
-            pointerEvents: 'none',
-          }}
-        />
-        <span
-          ref={phrase1TextRef}
-          className="relative underline"
-          style={{
-            position: 'relative',
-            zIndex: 1,
-            color: '#FFFFFF',
-            textDecorationThickness: '1px',
-            textUnderlineOffset: '2px',
-            pointerEvents: 'none',
-          }}
-        >
-          {currentPhrase1}
+        {/* Screen readers get one stable role instead of every keystroke */}
+        <span className="sr-only">{getArticle(ROLES[0])} {ROLES[0]}</span>
+        <span aria-hidden="true">
+          {role}
+          <span className="typing-caret" />
         </span>
-      </span>
-      .
+        .
       </span>{' '}
-      I create and produce immersive experiences, apps, and interactive art in New York City, the best city in the world.
+      I create and produce{desktopBreak}
+      immersive experiences, apps, and interactive art in{desktopBreak}
+      New York City, the best city in the world.
       {showWorkLink && (
         <span className="block" style={{ marginTop: '0.75em' }}>
           <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">

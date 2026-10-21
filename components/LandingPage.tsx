@@ -3,14 +3,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { Instagram, Mail, X } from 'lucide-react'
+import { ChevronDown, Instagram, Mail, Phone, Plus, X } from 'lucide-react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { AnimatedLink } from './AnimatedLink'
 import { InteractiveBio } from './InteractiveBio'
-import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_STRIP } from './scanLayout'
+import { SCAN_BUTTON_SIZE, SCAN_BUTTONS_LIFT_MOBILE, SCAN_ROW_DESKTOP, SCAN_STRIP } from './scanLayout'
 
 const ScanFigure = dynamic(() => import('./ScanFigure'), { ssr: false })
+
+// Space under the footer wordmark, and the desktop footer bottom row's height
+// (padding + Origen dot + border); the desktop landing wordmark sits at the same height
+// the footer wordmark ends up at the bottom of the page, so the two screens match
+const FOOTER_WORDMARK_GAP = 350
+const FOOTER_ROW_DESKTOP = 20 + SCAN_BUTTON_SIZE.desktop + 16 + 1
 
 // The big YOPABLO wordmark, stretched to the full width it's given
 function Wordmark({ style }: { style?: React.CSSProperties }) {
@@ -34,6 +40,8 @@ function Wordmark({ style }: { style?: React.CSSProperties }) {
 
 // Desktop width of the About / Contact sections: half the content width minus half the old 60px column gap
 const TEXT_COLUMN_WIDTH = 'calc((100% - 60px) / 2)'
+// Desktop About / Contact width, as a share of the text column
+const SECTION_WIDTH_DESKTOP = 0.6
 import { PressHighlight } from '@/types/pressHighlight'
 import { Project } from '@/types/project'
 import { urlFor } from '@/sanity/lib/image'
@@ -57,7 +65,10 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const [isMobile, setIsMobile] = useState(false)
   const [isMedium, setIsMedium] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' })
+  const emptyForm = { name: '', email: '', message: '', subscribe: false }
+  const [formData, setFormData] = useState(emptyForm)
+  const [showMessage, setShowMessage] = useState(false) // message box opens via "+ Add a message"
+  const messageRef = useRef<HTMLTextAreaElement>(null)
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
   const [isWorkOpen, setIsWorkOpen] = useState(false)
@@ -143,42 +154,25 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       setTimeout(() => {
         const sectionElement = contactSectionRef.current
         if (!sectionElement) return
-        
+
+        // Centre the section's visible block (divider line through the form) on screen,
+        // past its top/bottom padding; if it's taller than the screen, show it from the top
+        const block = (sectionElement.firstElementChild as HTMLElement | null) || sectionElement
+        const rect = block.getBoundingClientRect()
+        const blockTop = rect.top + window.scrollY
+        const centred = blockTop + rect.height / 2 - window.innerHeight / 2
+        const fromTop = blockTop - (mobile ? 12 : 48)
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+        const targetY = Math.max(0, Math.min(rect.height < window.innerHeight ? centred : fromTop, maxScroll))
+
         // Detect iOS Safari
-        const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+        const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
                            !(window as any).MSStream
-        
+
         if (isIOSSafari || mobile) {
-          // Find the header div with bullet point, or use section start
-          const headerDiv = sectionElement.querySelector('div[class*="cursor-pointer"]') as HTMLElement
-          const borderDiv = sectionElement.querySelector('.border-t') as HTMLElement
-          const targetElement = borderDiv || headerDiv || sectionElement
-          
-          if (targetElement) {
-            // Calculate exact position BEFORE scrolling
-            const rect = targetElement.getBoundingClientRect()
-            const elementTop = rect.top + window.scrollY
-            const offset = mobile ? 12 : 48
-            
-            // Clamp to document bounds to prevent overshooting
-            const maxScroll = document.documentElement.scrollHeight - window.innerHeight
-            const targetY = Math.max(0, Math.min(elementTop - offset, maxScroll))
-            
-            // Single smooth scroll to exact position - no adjustments needed
-            window.scrollTo({ 
-              top: targetY, 
-              behavior: 'smooth' 
-            })
-          }
+          // Native smooth scroll on phones (they scroll natively, see SmoothScroll)
+          window.scrollTo({ top: targetY, behavior: 'smooth' })
         } else {
-          // Use GSAP for desktop (non-iOS); aim at the divider line, past the section's top padding
-          const borderDiv = sectionElement.querySelector('.border-t') as HTMLElement | null
-          const rect = (borderDiv || sectionElement).getBoundingClientRect()
-          const elementTop = rect.top + window.scrollY
-          const offset = 48
-          const maxScroll = document.documentElement.scrollHeight - window.innerHeight
-          const targetY = Math.max(0, Math.min(elementTop - offset, maxScroll))
-          
           gsap.killTweensOf(window)
           gsap.to(window, {
             scrollTo: { y: targetY, autoKill: false },
@@ -190,15 +184,20 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     }
   }
 
-  // Clicking Dancing, from anywhere on the page, glides to the next section after the landing:
-  // phones open on the YOPABLO landing, so they go to the "Hi, I'm Pablo" bio; desktop opens
-  // on the bio, so it goes to About (its divider line, past the section's top padding)
-  const handleClipChange = (clip: string) => {
-    if (clip !== 'dancing') return
-    const target = mobile ? heroContainerRef.current : aboutSectionRef.current?.querySelector('.border-t')
-    if (!target) return
-    const offset = mobile ? 0 : 48
-    const top = target.getBoundingClientRect().top + window.scrollY - offset
+  // A "Scroll" prompt fades in at the bottom of the landing 2s after the dance music starts
+  const [showScrollCta, setShowScrollCta] = useState(false)
+  const scrollCtaTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleMusicStart = () => {
+    if (showScrollCta || scrollCtaTimer.current) return
+    scrollCtaTimer.current = setTimeout(() => setShowScrollCta(true), 2000)
+  }
+  useEffect(() => () => {
+    if (scrollCtaTimer.current) clearTimeout(scrollCtaTimer.current)
+  }, [])
+
+  const scrollToBio = () => {
+    if (!heroContainerRef.current) return
+    const top = heroContainerRef.current.getBoundingClientRect().top + window.scrollY
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
   }
 
@@ -215,8 +214,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    // Basic validation
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    // Basic validation (the message is optional)
+    if (!formData.name.trim() || !formData.email.trim()) {
       setFormStatus('error')
       return
     }
@@ -243,12 +242,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           name: formData.name,
           email: formData.email,
           message: formData.message,
+          subscribe: formData.subscribe ? 'yes' : 'no', // add to the mailing list
         }),
       })
 
       if (response.ok) {
         setFormStatus('success')
-        setFormData({ name: '', email: '', message: '' })
+        setFormData(emptyForm)
+        setShowMessage(false)
         // Reset success message after 5 seconds
         setTimeout(() => setFormStatus('idle'), 5000)
       } else {
@@ -262,7 +263,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const checked = e.target instanceof HTMLInputElement && e.target.type === 'checkbox' ? e.target.checked : undefined
+    setFormData(prev => ({ ...prev, [name]: checked ?? value }))
     // Reset error status when user starts typing
     if (formStatus === 'error') {
       setFormStatus('idle')
@@ -463,25 +465,64 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="text-white" suppressHydrationWarning>
       {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
-      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} onClipChange={handleClipChange} />}
+      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} onInfoClick={scrollToBio} onMusicStart={handleMusicStart} />}
 
-      {/* Mobile landing: just the pinned 3D figure with YOPABLO across it, sitting
-          right above the clip buttons; the bio follows on scroll. On phones the landing
-          and the rest of the page are scroll-snap areas, so the first scroll glides
-          straight to the bio (see .snap-start in globals.css) */}
-      {mobile && (
-        <div className="snap-start" style={{ position: 'relative', height: 'var(--hero-h, 100svh)' }}>
-          <Wordmark
-            style={{
-              position: 'absolute',
-              left: '32px',
-              width: 'calc(100% - 64px)',
-              // top edge of the buttons, plus a small gap
-              bottom: `${SCAN_BUTTONS_LIFT_MOBILE + (SCAN_STRIP.mobile + SCAN_BUTTON_SIZE.mobile) / 2 + 12}px`,
-            }}
-          />
-        </div>
-      )}
+      {/* Landing: just the pinned 3D figure with YOPABLO across it; the bio follows on scroll.
+          Mobile: the wordmark sits right above the clip buttons, and the landing and the rest
+          of the page are scroll-snap areas so the first scroll glides straight to the bio (see
+          .snap-start in globals.css). Desktop: the wordmark sits where the footer one ends up
+          at the bottom of the page. */}
+      <div className={mobile ? 'snap-start' : undefined} style={{ position: 'relative', height: mobile ? 'var(--hero-h, 100svh)' : '100vh' }}>
+        <Wordmark
+          style={
+            mobile
+              ? {
+                  position: 'absolute',
+                  left: '32px',
+                  width: 'calc(100% - 64px)',
+                  // top edge of the buttons, plus a small gap
+                  bottom: `${SCAN_BUTTONS_LIFT_MOBILE + (SCAN_STRIP.mobile + SCAN_BUTTON_SIZE.mobile) / 2 + 12}px`,
+                }
+              : {
+                  position: 'absolute',
+                  left: '88px',
+                  width: 'calc(100% - 176px)',
+                  bottom: `${FOOTER_WORDMARK_GAP + FOOTER_ROW_DESKTOP}px`,
+                }
+          }
+        />
+        <button
+          type="button"
+          onClick={scrollToBio}
+          aria-hidden={!showScrollCta}
+          tabIndex={showScrollCta ? 0 : -1}
+          className="scroll-cta"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 'max(24px, env(safe-area-inset-bottom))',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'none',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: mobile ? '13px' : '14px',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            opacity: showScrollCta ? 1 : 0,
+            visibility: showScrollCta ? 'visible' : 'hidden',
+            transition: 'opacity 0.6s ease, visibility 0.6s',
+            zIndex: 1,
+          }}
+        >
+          Scroll
+          <ChevronDown size={mobile ? 18 : 20} strokeWidth={1.5} className="scroll-cta-arrow" />
+        </button>
+      </div>
 
       {/* Everything after the landing, as one snap area that scrolls freely inside */}
       <div className={mobile ? 'snap-start' : undefined}>
@@ -496,12 +537,12 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
         overflow: mobile ? 'hidden' : 'visible'
       }}>
         {/* Desktop: "View selected projects" with the contact links under it, at the bottom of the
-            first screen; the links row is button-height and centred on the 3D clip buttons' line */}
+            first screen; the links row is level with the 3D clip buttons on the right */}
         {!mobile && (
           <div style={{
             position: 'absolute',
             left: '88px',
-            bottom: `${(SCAN_STRIP.desktop - SCAN_BUTTON_SIZE.desktop) / 2}px`,
+            bottom: `${SCAN_ROW_DESKTOP.centerFromBottom - SCAN_BUTTON_SIZE.desktop / 2}px`,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
@@ -623,8 +664,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
       {/* About Section */}
       <div ref={aboutSectionRef} className="flex flex-col" style={{ padding: mobile ? '100px 32px' : '200px 88px' }}>
-        {/* Desktop: as wide as the left text column, so the divider line stops at the text */}
-        <div className="w-full" style={{ maxWidth: mobile ? '100%' : TEXT_COLUMN_WIDTH }}>
+        {/* Desktop: narrower than the text column, centred on the page */}
+        <div className="w-full" style={{ maxWidth: mobile ? '100%' : `calc(${TEXT_COLUMN_WIDTH} * ${SECTION_WIDTH_DESKTOP})`, margin: mobile ? undefined : '0 auto' }}>
           <div className="border-t border-white" />
           
           <div 
@@ -649,9 +690,9 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                   I’m Pablo. I was born in Colombia, grew up in Atlanta, went to art school in Savannah, and have spent the last 14 years in Brooklyn directing large-scale light installations and interactive experiences.
                 </p>
                 <p style={{ margin: 0 }}>
-                  I’ve run my studio,{' '}
+                  I founded{' '}
                   <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline">Studio Studio</AnimatedLink>
-                  , since 2015, when it started at NEW INC. Since then I’ve made work for brands, entertainment networks, and cultural institutions, with projects shown at major festivals and art fairs. Lately I’m most excited about permanent light installations and new media sculpture.
+                  {' '}in 2015 at NEW INC, the New Museum’s art and technology incubator. Since then I’ve made work for brands, entertainment networks, and cultural institutions, often alongside creative teams at agencies. Lately I’m most excited about how quickly an idea can become a stable prototype, whether it’s fully digital or an interactive light piece.
                 </p>
                 {/* Desktop only: mobile keeps the About text to the first two paragraphs */}
                 {!mobile && (
@@ -989,8 +1030,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
       {/* Contact Section */}
       <div ref={contactSectionRef} className="flex flex-col" style={{ padding: mobile ? '48px 32px' : '200px 88px' }}>
-        {/* Desktop: as wide as the left text column, so the divider line stops at the text */}
-        <div className="w-full" style={{ maxWidth: mobile ? '100%' : TEXT_COLUMN_WIDTH }}>
+        {/* Desktop: narrower than the text column, centred on the page */}
+        <div className="w-full" style={{ maxWidth: mobile ? '100%' : `calc(${TEXT_COLUMN_WIDTH} * ${SECTION_WIDTH_DESKTOP})`, margin: mobile ? undefined : '0 auto' }}>
           <div className="border-t border-white" />
           
           <div 
@@ -1035,89 +1076,155 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
               }
             `}} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '20px' : '40px', marginTop: mobile ? '8px' : '40px', paddingBottom: mobile ? '24px' : '60px' }}>
-              {/* CTA under the heading */}
-              <div style={{ fontSize: mobile ? '16px' : '18px', lineHeight: mobile ? '1.5' : '1.6' }}>
-                <p style={{ margin: 0 }}>
-                  Drop me a line.
-                </p>
+              {/* Direct contact details */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', fontSize: mobile ? '16px' : '18px' }}>
+                {[
+                  { href: 'https://instagram.com/yopablo', label: '@yopablo', Icon: Instagram, external: true },
+                  { href: 'mailto:hello@studiostudio.nyc', label: 'hello@studiostudio.nyc', Icon: Mail },
+                  { href: 'tel:+13477221388', label: '(347) 722-1388', Icon: Phone },
+                ].map(({ href, label, Icon, external }) => (
+                  <AnimatedLink
+                    key={href}
+                    href={href}
+                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    style={{ color: '#FFFFFF' }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <Icon size={mobile ? 18 : 20} strokeWidth={1.5} />
+                      {label}
+                    </span>
+                  </AnimatedLink>
+                ))}
               </div>
 
               {/* Contact Form */}
               <div>
                 <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '12px' : '24px', width: '100%' }}>
-                  {/* Name Field */}
-                  <div>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleFormChange}
-                      placeholder="Name"
-                      required
-                      disabled={formStatus === 'submitting'}
-                      style={{
-                        width: '100%',
-                        padding: mobile ? '8px 0' : '12px 0',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                        color: '#FFFFFF',
-                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
-                        fontFamily: 'inherit',
-                        outline: 'none',
-                      }}
-                    />
+                  {/* Name and email on one line */}
+                  <div style={{ display: 'flex', gap: mobile ? '12px' : '24px' }}>
+                    {/* Name Field */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleFormChange}
+                        placeholder="Name"
+                        required
+                        disabled={formStatus === 'submitting'}
+                        style={{
+                          width: '100%',
+                          padding: mobile ? '8px 0' : '12px 0',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                          color: '#FFFFFF',
+                          fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
+                          fontFamily: 'inherit',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+
+                    {/* Email Field */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleFormChange}
+                        placeholder="Email"
+                        required
+                        disabled={formStatus === 'submitting'}
+                        style={{
+                          width: '100%',
+                          padding: mobile ? '8px 0' : '12px 0',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                          color: '#FFFFFF',
+                          fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
+                          fontFamily: 'inherit',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  {/* Email Field */}
-                  <div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleFormChange}
-                      placeholder="Email"
-                      required
+                  {/* Message Field: closed until "+ Add a message" */}
+                  {showMessage ? (
+                    <div>
+                      <textarea
+                        ref={messageRef}
+                        name="message"
+                        value={formData.message}
+                        onChange={handleFormChange}
+                        placeholder="Message"
+                        rows={mobile ? 3 : 4}
+                        disabled={formStatus === 'submitting'}
+                        style={{
+                          width: '100%',
+                          padding: mobile ? '8px 0' : '12px 0',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid rgba(255, 255, 255, 1)',
+                          color: '#FFFFFF',
+                          fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
+                          fontFamily: 'inherit',
+                          outline: 'none',
+                          resize: 'vertical',
+                          minHeight: mobile ? '64px' : '80px',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMessage(true)
+                        requestAnimationFrame(() => messageRef.current?.focus())
+                      }}
                       disabled={formStatus === 'submitting'}
                       style={{
-                        width: '100%',
+                        alignSelf: 'flex-start',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
                         padding: mobile ? '8px 0' : '12px 0',
                         backgroundColor: 'transparent',
                         border: 'none',
-                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
                         color: '#FFFFFF',
-                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
+                        fontSize: mobile ? '16px' : '18px',
                         fontFamily: 'inherit',
-                        outline: 'none',
+                        cursor: 'pointer',
                       }}
-                    />
-                  </div>
+                    >
+                      <Plus size={mobile ? 18 : 20} strokeWidth={1.5} />
+                      Add a message
+                    </button>
+                  )}
 
-                  {/* Message Field */}
-                  <div>
-                    <textarea
-                      name="message"
-                      value={formData.message}
+                  {/* Mailing list opt-in */}
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      alignSelf: 'flex-start',
+                      fontSize: mobile ? '16px' : '18px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      name="subscribe"
+                      checked={formData.subscribe}
                       onChange={handleFormChange}
-                      placeholder="Message"
-                      required
-                      rows={mobile ? 3 : 4}
                       disabled={formStatus === 'submitting'}
-                      style={{
-                        width: '100%',
-                        padding: mobile ? '8px 0' : '12px 0',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid rgba(255, 255, 255, 1)',
-                        color: '#FFFFFF',
-                        fontSize: mobile ? '16px' : '18px', // 16px+ stops iOS zooming in on focus
-                        fontFamily: 'inherit',
-                        outline: 'none',
-                        resize: 'vertical',
-                        minHeight: mobile ? '64px' : '80px',
-                      }}
+                      style={{ width: '18px', height: '18px', margin: 0, accentColor: '#FDF843', cursor: 'pointer' }}
                     />
-                  </div>
+                    Add me to the mailing list
+                  </label>
 
                   {/* Submit Button */}
                   <button
@@ -1175,7 +1282,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             justifyContent: 'flex-end',
             gap: '500px',
           }}>
-            <Wordmark style={{ marginTop: '350px', marginBottom: '350px' }} />
+            <Wordmark style={{ marginTop: '350px', marginBottom: `${FOOTER_WORDMARK_GAP}px` }} />
 
           </div>
 
@@ -1183,8 +1290,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
           <div className="pb-safe" style={{ 
             marginTop: 'auto',
             paddingTop: '20px',
-            // Desktop: at the end of the page the Origen dot lines up with the fixed 3D
-            // clip buttons (their row is centred 36px above the bottom of the screen)
+            // Desktop: at the end of the page the Origen dot sits on the same line as the bio
+            // screen's bottom links (centred 36px above the bottom of the screen)
             paddingBottom: mobile ? '40px' : '16px',
             borderTop: '1px solid rgba(255,255,255,0.15)',
             // Desktop: three columns so the copyright sits dead centre: Origen dot | © | (Work)
