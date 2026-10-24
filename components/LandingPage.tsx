@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { ChevronDown, Instagram, Mail, Phone, Plus, X } from 'lucide-react'
+import { Instagram, Mail, Phone, Plus, X } from 'lucide-react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { AnimatedLink } from './AnimatedLink'
@@ -87,6 +87,8 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
 
   const navLinksRef = useRef<HTMLDivElement>(null)
   const heroContainerRef = useRef<HTMLDivElement>(null)
+  const landingRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
   const workPanelRef = useRef<HTMLDivElement>(null)
 
   const categories = [
@@ -184,15 +186,42 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
     }
   }
 
-  // A "Scroll" prompt fades in at the bottom of the landing 2s after the dance music starts
-  const [showScrollCta, setShowScrollCta] = useState(false)
-  const scrollCtaTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const handleMusicStart = () => {
-    if (showScrollCta || scrollCtaTimer.current) return
-    scrollCtaTimer.current = setTimeout(() => setShowScrollCta(true), 2000)
-  }
-  useEffect(() => () => {
-    if (scrollCtaTimer.current) clearTimeout(scrollCtaTimer.current)
+  // The 3D figure's animation follows the section in the middle of the screen: pacing on the
+  // landing, dancing through the bio and About, typing at Contact, lying down at the bottom.
+  // A section has to hold the middle for a moment before the animation switches, so a fast
+  // scroll crossfades once to where it stops instead of flickering through every section.
+  const [sectionClip, setSectionClip] = useState('pacing')
+  useEffect(() => {
+    const sections: [React.RefObject<HTMLDivElement | null>, string][] = [
+      [landingRef, 'pacing'],
+      [heroContainerRef, 'dancing'],
+      [aboutSectionRef, 'dancing'],
+      [contactSectionRef, 'typing'],
+      [footerRef, 'laying'],
+    ]
+    // Page position from layout offsets, which ignore the smooth scroll's transform
+    const pageTop = (el: HTMLElement) => {
+      let top = 0
+      for (let node: HTMLElement | null = el; node; node = node.offsetParent as HTMLElement | null) top += node.offsetTop
+      return top
+    }
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const update = () => {
+      const probe = window.scrollY + window.innerHeight / 2
+      const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2
+      let next = 'pacing'
+      for (const [ref, clipName] of sections) {
+        if (ref.current && pageTop(ref.current) <= probe) next = clipName
+      }
+      if (atBottom) next = 'laying'
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => setSectionClip(next), 150)
+    }
+    window.addEventListener('scroll', update, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', update)
+      if (timer) clearTimeout(timer)
+    }
   }, [])
 
   const scrollToBio = () => {
@@ -465,14 +494,14 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
   return (
     <div className="text-white" suppressHydrationWarning>
       {/* 3D scan pinned bottom-right behind the page (also paints the blue background) */}
-      {hasMounted && <ScanFigure mobile={mobile} onContactClick={() => scrollToContact()} onInfoClick={scrollToBio} onMusicStart={handleMusicStart} />}
+      {hasMounted && <ScanFigure mobile={mobile} sectionClip={sectionClip} onContactClick={() => scrollToContact()} onInfoClick={scrollToBio} />}
 
       {/* Landing: just the pinned 3D figure with YOPABLO across it; the bio follows on scroll.
           Mobile: the wordmark sits right above the clip buttons, and the landing and the rest
           of the page are scroll-snap areas so the first scroll glides straight to the bio (see
           .snap-start in globals.css). Desktop: the wordmark sits where the footer one ends up
           at the bottom of the page. */}
-      <div className={mobile ? 'snap-start' : undefined} style={{ position: 'relative', height: mobile ? 'var(--hero-h, 100svh)' : '100vh' }}>
+      <div ref={landingRef} className={mobile ? 'snap-start' : undefined} style={{ position: 'relative', height: mobile ? 'var(--hero-h, 100svh)' : '100vh' }}>
         <Wordmark
           id="landing-wordmark" // the 3D figure lies on top of it (see ScanFigure)
           style={
@@ -492,37 +521,6 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 }
           }
         />
-        <button
-          type="button"
-          onClick={scrollToBio}
-          aria-hidden={!showScrollCta}
-          tabIndex={showScrollCta ? 0 : -1}
-          className="scroll-cta"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 'max(24px, env(safe-area-inset-bottom))',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '2px',
-            background: 'none',
-            border: 'none',
-            color: '#FFFFFF',
-            fontSize: mobile ? '13px' : '14px',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            opacity: showScrollCta ? 1 : 0,
-            visibility: showScrollCta ? 'visible' : 'hidden',
-            transition: 'opacity 0.6s ease, visibility 0.6s',
-            zIndex: 1,
-          }}
-        >
-          Scroll
-          <ChevronDown size={mobile ? 18 : 20} strokeWidth={1.5} className="scroll-cta-arrow" />
-        </button>
       </div>
 
       {/* Everything after the landing, as one snap area that scrolls freely inside */}
@@ -1266,7 +1264,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col" style={{ 
+      <div ref={footerRef} className="flex flex-col" style={{ 
         padding: mobile ? '0 32px' : '0 88px',
         minHeight: '50vh',
         display: 'flex',
@@ -1283,7 +1281,7 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
             justifyContent: 'flex-end',
             gap: '500px',
           }}>
-            <Wordmark style={{ marginTop: '350px', marginBottom: `${FOOTER_WORDMARK_GAP}px` }} />
+            <Wordmark id="footer-wordmark" style={{ marginTop: '350px', marginBottom: `${FOOTER_WORDMARK_GAP}px` }} />
 
           </div>
 

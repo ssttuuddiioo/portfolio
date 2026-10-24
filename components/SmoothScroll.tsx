@@ -47,6 +47,7 @@ export function SmoothScroll({ children }: SmoothScrollProps) {
 
       gsap.set(scrollContent, {
         y: -currentScroll,
+        force3D: true, // keep the page on its own GPU layer while it moves
       })
 
       frame = requestAnimationFrame(smoothScroll)
@@ -90,7 +91,7 @@ export function SmoothScroll({ children }: SmoothScrollProps) {
 
   return (
     <div ref={scrollContainerRef} style={containerStyle}>
-      <div ref={scrollContentRef}>
+      <div ref={scrollContentRef} data-scroll-content style={smooth ? { willChange: 'transform' } : undefined}>
         {children}
       </div>
     </div>

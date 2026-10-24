@@ -36,7 +36,7 @@ const CLIPS: {
 // Played by the contact (email) button rather than its own icon
 const EMAIL_CLIP = 'typing'
 const CROSSFADE = 0.5 // seconds
-// Lying down rests on the landing wordmark; its letters' top edge as a fraction of the svg height
+// Lying down rests on a YOPABLO wordmark; its letters' top edge as a fraction of the svg height
 const LIE_ON_WORDMARK_CLIP = 'laying'
 const WORDMARK_CAP_TOP = 14 / 160
 const DISTANCE = 4
@@ -169,6 +169,18 @@ function Orbit({
     offsetY: 0,
   })
   const origin = useMemo(() => new THREE.Vector3(), [])
+
+  // The canvas is pinned, so its position only changes on resize; cache it rather than
+  // reading layout every frame (which fights the smooth scroll)
+  const canvasTop = useRef(0)
+  useEffect(() => {
+    const measure = () => {
+      canvasTop.current = gl.domElement.getBoundingClientRect().top
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [gl, floorY])
 
   // Swing to the nearest front-facing angle (the figure faces +Z, turned by faceYaw)
   useEffect(() => {
@@ -328,7 +340,7 @@ function Orbit({
     if (floorY !== null) {
       origin.set(0, 0, 0).project(cam)
       const floorInCanvas = ((1 - origin.y) / 2) * h
-      targetY = floorInCanvas - (floorY - gl.domElement.getBoundingClientRect().top)
+      targetY = floorInCanvas - (floorY - canvasTop.current)
     }
     o.offsetY = THREE.MathUtils.damp(o.offsetY, targetY, 4, delta)
     if (Math.abs(o.offsetY) > 0.01) cam.setViewOffset(fullWidth, h, fullWidth / 2 - fx, o.offsetY, w, h)
@@ -339,12 +351,12 @@ function Orbit({
 
 interface ScanFigureProps {
   mobile?: boolean
+  sectionClip?: string // the clip for the section in the middle of the screen
   onContactClick?: () => void
   onInfoClick?: () => void
-  onMusicStart?: () => void // fires each time a soundtrack actually starts playing
 }
 
-export default function ScanFigure({ mobile = false, onContactClick, onInfoClick, onMusicStart }: ScanFigureProps) {
+export default function ScanFigure({ mobile = false, sectionClip, onContactClick, onInfoClick }: ScanFigureProps) {
   const [loaded, setLoaded] = useState(false)
   const [typing, setTyping] = useState(false)
 
@@ -369,10 +381,56 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
     }
     if (audioRef.current.paused) {
       audioRef.current.currentTime = 0
-      audioRef.current.play().then(() => onMusicStart?.()).catch(() => {})
+      audioRef.current.play().catch(() => {})
     }
   }
   useEffect(() => () => audioRef.current?.pause(), [])
+
+  // Autoplay when scrolling into a dancing section. Browsers only allow sound after the visitor
+  // has clicked, tapped or pressed a key (scrolling doesn't count), so the soundtrack is
+  // "unlocked" on the first such gesture anywhere; from then on scrolling into a dancing section
+  // starts it unmuted. Muting with the speaker turns this off for the rest of the visit.
+  const unlockedRef = useRef(false)
+  const userMutedRef = useRef(false)
+  const clipRef = useRef(CLIPS[0].name)
+  const hasSoundtrack = (name: string) => !!CLIPS.find((c) => c.name === name)?.audio
+  useEffect(() => {
+    const src = CLIPS.find((c) => c.audio)?.audio
+    if (!src) return
+    const unlock = () => {
+      if (unlockedRef.current) return
+      unlockedRef.current = true
+      if (!audioRef.current || !audioRef.current.src.endsWith(src)) {
+        audioRef.current?.pause()
+        audioRef.current = new Audio(src)
+        audioRef.current.loop = true
+      }
+      const audio = audioRef.current
+      if (!audio.paused) return // this gesture already started it (e.g. the dance button)
+      // Play during the gesture (what mobile Safari needs), then keep it going only if the
+      // visitor is in a dancing section and hasn't muted
+      audio.muted = true
+      audio
+        .play()
+        .then(() => {
+          audio.muted = false
+          if (hasSoundtrack(clipRef.current) && !userMutedRef.current) {
+            audio.currentTime = 0
+            setSoundOn(true)
+          } else {
+            audio.pause()
+            audio.currentTime = 0
+          }
+        })
+        .catch(() => {
+          audio.muted = false
+          unlockedRef.current = false // not allowed yet; try again on the next gesture
+        })
+    }
+    const events = ['click', 'keydown', 'touchend'] as const
+    events.forEach((type) => window.addEventListener(type, unlock, { capture: true }))
+    return () => events.forEach((type) => window.removeEventListener(type, unlock, { capture: true }))
+  }, [])
 
   // On touch screens, get the pinned buttons out of the way while the keyboard is up
   useEffect(() => {
@@ -392,22 +450,47 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
   }, [])
   const [clip, setClip] = useState(CLIPS[0].name)
 
-  // Lying down rests on top of the landing YOPABLO: where its letters' top edge sits on screen
-  // when the page is at the landing (the figure is pinned, so this holds while scrolling)
+  // Lying down rests on top of a YOPABLO wordmark: the landing one near the top of the page,
+  // the footer one near the bottom. floorY is where its letters' top edge sits on screen with
+  // the page scrolled to that wordmark (the landing at the top, the footer at the very end);
+  // the figure is pinned, so it's measured once rather than tracked while scrolling.
   const [wordmarkTop, setWordmarkTop] = useState<number | null>(null)
   useEffect(() => {
     if (clip !== LIE_ON_WORDMARK_CLIP) return
     const measure = () => {
-      const el = document.getElementById('landing-wordmark')
-      if (!el) return setWordmarkTop(null)
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      const nearBottom = window.scrollY > maxScroll / 2
+      const el = document.getElementById(nearBottom ? 'footer-wordmark' : 'landing-wordmark')
+      const content = document.querySelector('[data-scroll-content]')
+      if (!el || !content) return setWordmarkTop(null)
       const r = el.getBoundingClientRect()
-      // Page position of the svg, plus the gap above the cap height (glyph tops at ~14 of 160 units)
-      setWordmarkTop(r.top + window.scrollY + r.height * WORDMARK_CAP_TOP)
+      // Position within the page (both rects move with the scroll), plus the gap above the
+      // letters' cap height (glyph tops at ~14 of 160 units)
+      const pageTop = r.top - content.getBoundingClientRect().top
+      setWordmarkTop(pageTop - (nearBottom ? maxScroll : 0) + r.height * WORDMARK_CAP_TOP)
     }
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [clip])
+
+  useEffect(() => {
+    clipRef.current = clip
+  }, [clip])
+
+  // Follow the section in the middle of the screen (a button click wins until the next section).
+  // Dancing sections start the music once sound is unlocked, unless the visitor muted it.
+  useEffect(() => {
+    if (!sectionClip) return
+    setClip(sectionClip)
+    if (hasSoundtrack(sectionClip) && unlockedRef.current && !userMutedRef.current) {
+      setSoundOn(true)
+      playClipAudio(sectionClip, true)
+    } else {
+      playClipAudio(sectionClip)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionClip])
   const handleLoaded = useCallback(() => setLoaded(true), [])
   const figureRef = useRef<THREE.Group>(null)
   const activeClip = CLIPS.find((c) => c.name === clip)
@@ -461,7 +544,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
         >
           <Canvas
             flat
-            dpr={[1, 2]}
+            dpr={[1, 1.5]} // full-width canvas: 1.5x keeps it crisp without starving the scroll
             camera={{ position: [0, 1.05, DISTANCE], fov: FOV, near: 0.1, far: 50 }}
             gl={{ alpha: true, antialias: true }}
             style={{ pointerEvents: 'none' }}
@@ -523,6 +606,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
               onClick={() => {
                 const next = !soundOn
                 setSoundOn(next)
+                userMutedRef.current = !next // a deliberate mute also stops scroll autoplay
                 playClipAudio(clip, next)
               }}
               className="scan-clip-button"
@@ -570,6 +654,7 @@ export default function ScanFigure({ mobile = false, onContactClick, onInfoClick
                     // Picking a clip with a soundtrack turns sound on; the speaker can then mute it
                     const withSound = soundOn || !!CLIPS.find((c) => c.name === name)?.audio
                     setSoundOn(withSound)
+                    if (withSound) userMutedRef.current = false
                     playClipAudio(name, withSound)
                   }}
                   className="scan-clip-button"
