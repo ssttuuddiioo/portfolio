@@ -521,6 +521,24 @@ export function LandingPage({ pressHighlights, projects, workIntroText }: Landin
                 }
           }
         />
+        {/* Mobile: "See projects" centred just under the clip buttons */}
+        {mobile && (
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              // bottom edge of the buttons, minus a small gap; the link hangs below that line
+              bottom: `${SCAN_BUTTONS_LIFT_MOBILE + (SCAN_STRIP.mobile - SCAN_BUTTON_SIZE.mobile) / 2 - 16}px`,
+              transform: 'translate(-50%, 100%)',
+              fontSize: '16px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <AnimatedLink href="https://studiostudio.nyc" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#FFFFFF' }}>
+              See projects
+            </AnimatedLink>
+          </div>
+        )}
       </div>
 
       {/* Everything after the landing, as one snap area that scrolls freely inside */}
